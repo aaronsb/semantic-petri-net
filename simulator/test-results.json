@@ -1,0 +1,165 @@
+{
+  "timestamp": "2025-06-10T23:58:46.158735",
+  "fsm_metrics": {
+    "tool_calls": 81,
+    "goals_completed": [
+      "goal-ship-feature",
+      "goal-fix-critical-bug",
+      "goal-complete-review",
+      "goal-ready-to-deploy",
+      "goal-performance-fixed",
+      "goal-reassign-work"
+    ],
+    "average_calls_per_goal": 13.5,
+    "semantic_hints_followed": 0,
+    "errors": 2
+  },
+  "petri_metrics": {
+    "tool_calls": 12,
+    "goals_completed": [
+      "goal-ship-feature",
+      "goal-fix-critical-bug",
+      "goal-complete-review",
+      "goal-ready-to-deploy",
+      "goal-performance-fixed",
+      "goal-quick-task-start",
+      "goal-reassign-work",
+      "goal-parallel-progress"
+    ],
+    "average_calls_per_goal": 1.5,
+    "semantic_hints_followed": 6,
+    "errors": 0
+  },
+  "efficiency_gain": 6.75,
+  "paths": {
+    "fsm": [
+      [
+        "listProjects",
+        "getProject('project-web')",
+        "listTasks('project-web')",
+        "getTask('task-auth')",
+        "getTaskState('task-auth')",
+        "assignTask('task-auth', 'user-alice')",
+        "updateTaskState('task-auth', 'In Progress')",
+        "updateTaskState('task-auth', 'Review')",
+        "updateTaskState('task-auth', 'Testing')",
+        "updateTaskState('task-auth', 'Done')"
+      ],
+      [
+        "navigateToRoot()",
+        "listProjects()",
+        "getProject('project-web')",
+        "listBugs('project-web')",
+        "getBug('bug-login')",
+        "assignBug('bug-login', 'user-bob')",
+        "updateBugState('bug-login', 'In Progress')",
+        "updateBugState('bug-login', 'Fixed')",
+        "updateBugState('bug-login', 'Verified')"
+      ],
+      [
+        "navigateToRoot()",
+        "listProjects()",
+        "getProject('project-web')",
+        "listTasks('project-web')",
+        "getTask('task-api')",
+        "updateTaskState('task-api', 'Testing')"
+      ],
+      [
+        "navigateToRoot()",
+        "listProjects()",
+        "getProject('project-web')",
+        "listTasks('project-web')",
+        "getTask('task-auth')",
+        "getTaskState('task-auth')",
+        "navigateToRoot()",
+        "listProjects()",
+        "getProject('project-web')",
+        "listTasks('project-web')",
+        "getTask('task-ui')",
+        "getTaskState('task-ui')",
+        "navigateToRoot()",
+        "listProjects()",
+        "getProject('project-web')",
+        "listTasks('project-web')",
+        "getTask('task-api')",
+        "getTaskState('task-api')",
+        "getTask('task-deploy')",
+        "updateTaskState('task-deploy', 'Ready')"
+      ],
+      [
+        "navigateToRoot()",
+        "listProjects()",
+        "getProject('project-web')",
+        "listBugs('project-web')",
+        "getBug('bug-performance')",
+        "assignBug('bug-performance', 'user-charlie')",
+        "updateBugState('bug-performance', 'In Progress')",
+        "updateBugState('bug-performance', 'Fixed')",
+        "updateBugState('bug-performance', 'Verified')"
+      ],
+      [
+        "navigateToRoot()",
+        "listProjects()",
+        "getProject('project-web')",
+        "listTasks('project-web')",
+        "findOpenTasks('project-web')",
+        "getTask('task-deploy')",
+        "assignTask('task-deploy', 'user-alice')",
+        "updateTaskState('task-deploy', 'In Progress')"
+      ],
+      [
+        "navigateToRoot()",
+        "listProjects()",
+        "getProject('project-web')",
+        "listTasks('project-web')",
+        "getTask('task-ui')",
+        "getTaskState('task-ui')",
+        "assignTask('task-ui', 'user-charlie')"
+      ],
+      [
+        "navigateToRoot()",
+        "listProjects()",
+        "getProject('project-web')",
+        "listTasks('project-web')",
+        "getTask('task-ui')",
+        "updateTaskState('task-ui', 'Review')",
+        "navigateToRoot()",
+        "listProjects()",
+        "getProject('project-web')",
+        "listBugs('project-web')",
+        "getBug('bug-performance')",
+        "updateBugState('bug-performance', 'In Progress')"
+      ]
+    ],
+    "petri": [
+      [
+        "startWorkingOn('task-auth')",
+        "completeTask('task-auth')"
+      ],
+      [
+        "startWorkingOn('bug-login')",
+        "markBugFixed('bug-login')",
+        "verifyBugFix('bug-login')"
+      ],
+      [
+        "approveReview('task-api')"
+      ],
+      [
+        "prepareDeployment('task-deploy')"
+      ],
+      [
+        "startWorkingOn('performance issue')",
+        "resolveAndVerify('bug-performance')"
+      ],
+      [
+        "startWorkingOn('any open task')"
+      ],
+      [
+        "reassignWork('task-ui', 'user-charlie')"
+      ],
+      [
+        "advanceWorkflow(['task-ui', 'bug-performance'])"
+      ]
+    ]
+  }
+}

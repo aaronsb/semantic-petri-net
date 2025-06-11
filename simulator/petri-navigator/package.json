@@ -1,13 +1,16 @@
 {
   "name": "petri-workflow-navigator",
   "version": "1.0.0",
-  "description": "Petri net-based workflow navigator with semantic hints",
-  "main": "index.js",
+  "description": "Petri Net workflow navigator using SNAKES library for formal verification",
   "type": "module",
+  "main": "index.py",
   "scripts": {
-    "start": "node index.js"
+    "start": "python3 index.py"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
-  }
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  },
+  "devDependencies": {},
+  "author": "",
+  "license": "MIT"
 }
