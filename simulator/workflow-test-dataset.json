@@ -1,0 +1,216 @@
+{
+  "description": "Simplified workflow dataset for comparing FSM vs Petri net navigation",
+  "entities": {
+    "projects": {
+      "project-web": {
+        "id": "project-web",
+        "name": "Web Application",
+        "state": "Active",
+        "tasks": ["task-auth", "task-ui", "task-api", "task-deploy"],
+        "bugs": ["bug-login", "bug-performance"]
+      }
+    },
+    "tasks": {
+      "task-auth": {
+        "id": "task-auth",
+        "name": "Implement Authentication",
+        "state": "Open",
+        "assignee": null,
+        "validStates": ["Open", "In Progress", "Review", "Testing", "Done"]
+      },
+      "task-ui": {
+        "id": "task-ui",
+        "name": "Design User Interface",
+        "state": "In Progress",
+        "assignee": "user-alice",
+        "dependsOn": ["task-auth"],
+        "validStates": ["Open", "In Progress", "Review", "Done"]
+      },
+      "task-api": {
+        "id": "task-api",
+        "name": "Build REST API",
+        "state": "Review",
+        "assignee": "user-bob",
+        "validStates": ["Open", "In Progress", "Review", "Testing", "Done"]
+      },
+      "task-deploy": {
+        "id": "task-deploy",
+        "name": "Deploy to Production",
+        "state": "Open",
+        "assignee": null,
+        "dependsOn": ["task-auth", "task-ui", "task-api"],
+        "validStates": ["Open", "Ready", "Deploying", "Done"]
+      }
+    },
+    "bugs": {
+      "bug-login": {
+        "id": "bug-login",
+        "name": "Login fails on mobile",
+        "state": "New",
+        "assignee": null,
+        "severity": "High",
+        "validStates": ["New", "Assigned", "In Progress", "Fixed", "Verified", "Closed"]
+      },
+      "bug-performance": {
+        "id": "bug-performance",
+        "name": "Slow page load",
+        "state": "In Progress",
+        "assignee": "user-alice",
+        "severity": "Medium",
+        "validStates": ["New", "Assigned", "In Progress", "Fixed", "Verified", "Closed"]
+      }
+    },
+    "users": {
+      "user-alice": {
+        "id": "user-alice",
+        "name": "Alice",
+        "role": "developer",
+        "currentWork": ["task-ui", "bug-performance"]
+      },
+      "user-bob": {
+        "id": "user-bob",
+        "name": "Bob",
+        "role": "developer",
+        "currentWork": ["task-api"]
+      }
+    }
+  },
+  "goals": [
+    {
+      "id": "goal-ship-feature",
+      "name": "Ship Authentication Feature",
+      "condition": {
+        "entity": "task-auth",
+        "state": "Done"
+      },
+      "points": 100
+    },
+    {
+      "id": "goal-fix-critical-bug",
+      "name": "Fix Critical Bug",
+      "condition": {
+        "entity": "bug-login",
+        "state": "Verified"
+      },
+      "points": 100
+    },
+    {
+      "id": "goal-complete-review",
+      "name": "Complete Code Review",
+      "condition": {
+        "entity": "task-api",
+        "state": "Testing"
+      },
+      "points": 100
+    },
+    {
+      "id": "goal-ready-to-deploy",
+      "name": "Ready for Deployment",
+      "condition": {
+        "entity": "task-deploy",
+        "state": "Ready",
+        "prerequisites": "All dependent tasks must be Done"
+      },
+      "points": 100
+    },
+    {
+      "id": "goal-performance-fixed",
+      "name": "Performance Issue Resolved",
+      "condition": {
+        "entity": "bug-performance",
+        "state": "Verified"
+      },
+      "points": 100
+    },
+    {
+      "id": "goal-quick-task-start",
+      "name": "Start Any Task Efficiently",
+      "condition": {
+        "action": "Move any Open task to In Progress",
+        "efficiency": "Under 3 tool calls"
+      },
+      "points": 100
+    },
+    {
+      "id": "goal-reassign-work",
+      "name": "Reassign Work Item",
+      "condition": {
+        "action": "Change assignee on any In Progress item",
+        "efficiency": "Without checking current state first"
+      },
+      "points": 100
+    },
+    {
+      "id": "goal-parallel-progress",
+      "name": "Advance Multiple Items",
+      "condition": {
+        "action": "Move 2+ items forward in workflow",
+        "timeframe": "Within 10 tool calls"
+      },
+      "points": 100
+    }
+  ],
+  "navigation_challenges": {
+    "fsm_pain_points": [
+      "Must traverse hierarchy: Project -> Tasks -> Specific Task -> Check State -> Update",
+      "Cannot jump directly to task by ID",
+      "Must verify preconditions in sequence",
+      "No memory of previous operations"
+    ],
+    "semantic_advantages": [
+      "Direct operations: startWorkingOn('task-auth')",
+      "Contextual hints guide next actions",
+      "Multi-entry: can start from any point",
+      "Suggests related operations"
+    ]
+  },
+  "test_scenarios": [
+    {
+      "name": "Developer starts new task",
+      "start_state": "User wants to work on task-auth",
+      "goal": "goal-quick-task-start",
+      "fsm_steps": [
+        "listProjects()",
+        "getProject('project-web')",
+        "listTasks('project-web')",
+        "getTask('task-auth')",
+        "checkAssignment('task-auth')",
+        "assignTask('task-auth', 'user-alice')",
+        "updateTaskState('task-auth', 'In Progress')"
+      ],
+      "semantic_steps": [
+        "startWorkingOn('task-auth')"
+      ]
+    },
+    {
+      "name": "Fix critical bug",
+      "start_state": "Bug reported, needs fixing",
+      "goal": "goal-fix-critical-bug",
+      "fsm_steps": [
+        "listProjects()",
+        "getBugs('project-web')",
+        "getBug('bug-login')",
+        "checkBugState('bug-login')",
+        "assignBug('bug-login', 'user-alice')",
+        "updateBugState('bug-login', 'In Progress')",
+        "// ... work happens ...",
+        "updateBugState('bug-login', 'Fixed')",
+        "reassignBug('bug-login', 'qa-user')",
+        "updateBugState('bug-login', 'Verified')"
+      ],
+      "semantic_steps": [
+        "workOnBug('bug-login')",
+        "// Hints guide through workflow",
+        "fixBug('bug-login')",
+        "// Hints suggest verification",
+        "verifyBug('bug-login')"
+      ]
+    }
+  ],
+  "metrics": {
+    "efficiency": "Tool calls per goal achieved",
+    "discoverability": "Goals found without explicit search",
+    "error_recovery": "Ability to recover from wrong paths",
+    "cognitive_load": "Mental model complexity required"
+  }
+}

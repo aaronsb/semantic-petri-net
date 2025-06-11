@@ -1,0 +1,354 @@
+{
+  "entities": {
+    "projects": {
+      "project-101": {
+        "id": "project-101",
+        "name": "Mobile App Redesign",
+        "state": "Active",
+        "team": "team-alpha",
+        "tasks": ["task-201", "task-202", "task-203"],
+        "bugs": ["bug-301", "bug-302"]
+      },
+      "project-102": {
+        "id": "project-102", 
+        "name": "API Migration",
+        "state": "Planning",
+        "team": "team-beta",
+        "tasks": ["task-204", "task-205"],
+        "bugs": []
+      }
+    },
+    "tasks": {
+      "task-201": {
+        "id": "task-201",
+        "name": "Design new login screen",
+        "project": "project-101",
+        "state": "Open",
+        "assignee": null,
+        "validTransitions": {
+          "Open": ["In Progress", "Blocked"],
+          "In Progress": ["Code Review", "Blocked", "Open"],
+          "Code Review": ["Testing", "In Progress"],
+          "Testing": ["Done", "In Progress"],
+          "Blocked": ["Open", "In Progress"],
+          "Done": []
+        }
+      },
+      "task-202": {
+        "id": "task-202",
+        "name": "Implement authentication",
+        "project": "project-101",
+        "state": "In Progress",
+        "assignee": "user-401",
+        "validTransitions": {
+          "Open": ["In Progress", "Blocked"],
+          "In Progress": ["Code Review", "Blocked", "Open"],
+          "Code Review": ["Testing", "In Progress"],
+          "Testing": ["Done", "In Progress"],
+          "Blocked": ["Open", "In Progress"],
+          "Done": []
+        }
+      },
+      "task-203": {
+        "id": "task-203",
+        "name": "Write unit tests",
+        "project": "project-101",
+        "state": "Open",
+        "assignee": null,
+        "dependsOn": ["task-202"],
+        "validTransitions": {
+          "Open": ["In Progress", "Blocked"],
+          "In Progress": ["Code Review", "Blocked", "Open"],
+          "Code Review": ["Testing", "In Progress"],
+          "Testing": ["Done", "In Progress"],
+          "Blocked": ["Open", "In Progress"],
+          "Done": []
+        }
+      },
+      "task-204": {
+        "id": "task-204",
+        "name": "Document API endpoints",
+        "project": "project-102",
+        "state": "Open",
+        "assignee": null,
+        "validTransitions": {
+          "Open": ["In Progress", "Blocked"],
+          "In Progress": ["Review", "Blocked", "Open"],
+          "Review": ["Done", "In Progress"],
+          "Blocked": ["Open", "In Progress"],
+          "Done": []
+        }
+      },
+      "task-205": {
+        "id": "task-205",
+        "name": "Create migration plan",
+        "project": "project-102",
+        "state": "In Progress",
+        "assignee": "user-402",
+        "validTransitions": {
+          "Open": ["In Progress", "Blocked"],
+          "In Progress": ["Review", "Blocked", "Open"],
+          "Review": ["Done", "In Progress"],
+          "Blocked": ["Open", "In Progress"],
+          "Done": []
+        }
+      }
+    },
+    "bugs": {
+      "bug-301": {
+        "id": "bug-301",
+        "name": "Login button not responsive",
+        "project": "project-101",
+        "state": "New",
+        "severity": "High",
+        "assignee": null,
+        "validTransitions": {
+          "New": ["Assigned", "Won't Fix"],
+          "Assigned": ["In Progress", "New"],
+          "In Progress": ["Fixed", "Assigned", "Won't Fix"],
+          "Fixed": ["Verified", "Reopened"],
+          "Verified": ["Closed", "Reopened"],
+          "Reopened": ["Assigned", "In Progress"],
+          "Closed": ["Reopened"],
+          "Won't Fix": []
+        }
+      },
+      "bug-302": {
+        "id": "bug-302",
+        "name": "Session timeout too short",
+        "project": "project-101",
+        "state": "In Progress",
+        "severity": "Medium",
+        "assignee": "user-401",
+        "validTransitions": {
+          "New": ["Assigned", "Won't Fix"],
+          "Assigned": ["In Progress", "New"],
+          "In Progress": ["Fixed", "Assigned", "Won't Fix"],
+          "Fixed": ["Verified", "Reopened"],
+          "Verified": ["Closed", "Reopened"],
+          "Reopened": ["Assigned", "In Progress"],
+          "Closed": ["Reopened"],
+          "Won't Fix": []
+        }
+      }
+    },
+    "users": {
+      "user-401": {
+        "id": "user-401",
+        "name": "Alice Developer",
+        "role": "developer",
+        "team": "team-alpha",
+        "currentWork": ["task-202", "bug-302"]
+      },
+      "user-402": {
+        "id": "user-402",
+        "name": "Bob Architect",
+        "role": "developer",
+        "team": "team-beta",
+        "currentWork": ["task-205"]
+      },
+      "user-403": {
+        "id": "user-403",
+        "name": "Carol Manager",
+        "role": "project-manager",
+        "team": "team-alpha",
+        "currentWork": []
+      },
+      "user-404": {
+        "id": "user-404",
+        "name": "Dave Tester",
+        "role": "tester",
+        "team": "team-alpha",
+        "currentWork": []
+      }
+    },
+    "teams": {
+      "team-alpha": {
+        "id": "team-alpha",
+        "name": "Mobile Team",
+        "members": ["user-401", "user-403", "user-404"],
+        "projects": ["project-101"]
+      },
+      "team-beta": {
+        "id": "team-beta",
+        "name": "Platform Team",
+        "members": ["user-402"],
+        "projects": ["project-102"]
+      }
+    }
+  },
+  "operations": {
+    "listProjects": {
+      "description": "List all projects",
+      "requiredContext": [],
+      "roleAccess": ["developer", "project-manager", "tester"]
+    },
+    "getProject": {
+      "description": "Get project details",
+      "requiredContext": ["projectId"],
+      "roleAccess": ["developer", "project-manager", "tester"]
+    },
+    "listTasks": {
+      "description": "List tasks in a project",
+      "requiredContext": ["projectId"],
+      "roleAccess": ["developer", "project-manager", "tester"]
+    },
+    "getTask": {
+      "description": "Get task details",
+      "requiredContext": ["taskId"],
+      "roleAccess": ["developer", "project-manager", "tester"]
+    },
+    "assignTask": {
+      "description": "Assign task to user",
+      "requiredContext": ["taskId", "userId"],
+      "roleAccess": ["developer", "project-manager"],
+      "validStates": ["Open", "In Progress", "Blocked"]
+    },
+    "updateTaskState": {
+      "description": "Change task state",
+      "requiredContext": ["taskId", "newState"],
+      "roleAccess": ["developer", "project-manager"],
+      "requiresAssignment": true
+    },
+    "startWorkingOn": {
+      "description": "Start working on a task (assigns if needed, moves to In Progress)",
+      "requiredContext": ["taskIdentifier"],
+      "roleAccess": ["developer"],
+      "semanticOperation": true
+    },
+    "completeTask": {
+      "description": "Mark task as complete",
+      "requiredContext": ["taskId"],
+      "roleAccess": ["developer"],
+      "requiresState": ["Code Review", "Testing"],
+      "semanticOperation": true
+    },
+    "logTime": {
+      "description": "Log time on a task",
+      "requiredContext": ["taskId", "duration", "description"],
+      "roleAccess": ["developer", "tester"],
+      "requiresAssignment": true
+    },
+    "createBug": {
+      "description": "Report a new bug",
+      "requiredContext": ["projectId", "name", "description", "severity"],
+      "roleAccess": ["developer", "tester", "project-manager"]
+    },
+    "fixBug": {
+      "description": "Mark bug as fixed",
+      "requiredContext": ["bugId"],
+      "roleAccess": ["developer"],
+      "requiresAssignment": true,
+      "requiresState": ["In Progress"]
+    },
+    "verifyBug": {
+      "description": "Verify bug fix",
+      "requiredContext": ["bugId"],
+      "roleAccess": ["tester"],
+      "requiresState": ["Fixed"]
+    },
+    "getMyWork": {
+      "description": "Get current user's assigned work",
+      "requiredContext": ["userId"],
+      "roleAccess": ["developer", "tester", "project-manager"],
+      "semanticOperation": true
+    },
+    "reviewSprint": {
+      "description": "Review sprint progress",
+      "requiredContext": ["projectId"],
+      "roleAccess": ["project-manager"],
+      "semanticOperation": true
+    }
+  },
+  "scenarios": [
+    {
+      "id": "scenario-1",
+      "name": "Developer starts working on a task",
+      "goal": "Move task-201 to In Progress and assign to user-401",
+      "userContext": {
+        "userId": "user-401",
+        "role": "developer"
+      },
+      "expectedSteps": {
+        "fsm": [
+          "listProjects",
+          "getProject(project-101)",
+          "listTasks(project-101)",
+          "getTask(task-201)",
+          "assignTask(task-201, user-401)",
+          "updateTaskState(task-201, 'In Progress')"
+        ],
+        "semantic": [
+          "startWorkingOn('task-201')"
+        ]
+      }
+    },
+    {
+      "id": "scenario-2",
+      "name": "Tester verifies a bug fix",
+      "goal": "Verify bug-301 which is currently in Fixed state",
+      "userContext": {
+        "userId": "user-404",
+        "role": "tester"
+      },
+      "expectedSteps": {
+        "fsm": [
+          "listProjects",
+          "getProject(project-101)",
+          "getBugs(project-101)",
+          "getBug(bug-301)",
+          "checkBugState(bug-301)",
+          "verifyBug(bug-301)"
+        ],
+        "semantic": [
+          "verifyBug('bug-301')"
+        ]
+      }
+    },
+    {
+      "id": "scenario-3",
+      "name": "Manager reviews team progress",
+      "goal": "Get overview of team-alpha's current work",
+      "userContext": {
+        "userId": "user-403",
+        "role": "project-manager"
+      },
+      "expectedSteps": {
+        "fsm": [
+          "listTeams",
+          "getTeam(team-alpha)",
+          "listTeamMembers(team-alpha)",
+          "getUserWork(user-401)",
+          "getUserWork(user-404)",
+          "listProjects",
+          "getProject(project-101)",
+          "getProjectStatus(project-101)"
+        ],
+        "semantic": [
+          "reviewSprint('project-101')"
+        ]
+      }
+    },
+    {
+      "id": "scenario-4",
+      "name": "Developer logs time on current task",
+      "goal": "Log 2 hours on task-202 which is already assigned",
+      "userContext": {
+        "userId": "user-401", 
+        "role": "developer"
+      },
+      "expectedSteps": {
+        "fsm": [
+          "getMyWork(user-401)",
+          "getTask(task-202)",
+          "checkTaskAssignment(task-202)",
+          "checkTaskState(task-202)",
+          "logTime(task-202, '2h', 'Implemented auth logic')"
+        ],
+        "semantic": [
+          "logTime('task-202', '2h', 'Implemented auth logic')"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,772 @@
+{
+  "entities": {
+    "projects": {
+      "project-666": {
+        "id": "project-666",
+        "name": "Implement the Phone Tree From Hell",
+        "state": "Eternally In Progress",
+        "team": "team-sisyphus",
+        "tasks": ["task-infinity", "task-recursion", "task-404"],
+        "bugs": ["bug-feature", "bug-heisenbug", "bug-schrodinger"]
+      },
+      "project-42": {
+        "id": "project-42",
+        "name": "Find the Meaning of Life",
+        "state": "Blocked by Dolphins",
+        "team": "team-existential",
+        "tasks": ["task-towel", "task-panic", "task-fish"],
+        "bugs": ["bug-reality"]
+      },
+      "project-acme": {
+        "id": "project-acme",
+        "name": "Catch That Roadrunner",
+        "state": "Perpetually Failing",
+        "team": "team-coyote",
+        "tasks": ["task-anvil", "task-rocket", "task-tunnel"],
+        "bugs": ["bug-gravity", "bug-physics", "bug-timing"]
+      },
+      "project-kafka": {
+        "id": "project-kafka",
+        "name": "Complete Form 27B-6",
+        "state": "Awaiting Approval",
+        "team": "team-bureaucracy",
+        "tasks": ["task-form-a", "task-form-b", "task-form-c"],
+        "bugs": ["bug-metamorphosis"],
+        "requiredForms": ["form-27B-6", "form-27B-5", "form-to-get-form-27B-5"]
+      }
+    },
+    "tasks": {
+      "task-infinity": {
+        "id": "task-infinity",
+        "name": "Press 1 for More Options",
+        "project": "project-666",
+        "state": "Press 2 to Continue",
+        "assignee": "user-robot",
+        "validTransitions": {
+          "Press 2 to Continue": ["Press 3 for Previous Menu", "Press 1 for More Options"],
+          "Press 3 for Previous Menu": ["Press 1 for More Options"],
+          "Press 1 for More Options": ["Press 2 to Continue", "Please Hold"]
+        },
+        "specialCondition": "Each transition has a 50% chance of routing to 'Please Hold'"
+      },
+      "task-recursion": {
+        "id": "task-recursion",
+        "name": "Complete task-recursion",
+        "project": "project-666",
+        "state": "See task-recursion",
+        "dependsOn": ["task-recursion"],
+        "blockedBy": ["task-recursion"],
+        "validTransitions": {
+          "See task-recursion": ["See task-recursion"]
+        }
+      },
+      "task-404": {
+        "id": "task-404",
+        "name": "Task Not Found",
+        "project": "project-666",
+        "state": "Missing",
+        "assignee": "user-null",
+        "validTransitions": {
+          "Missing": ["Still Missing", "404 Error"],
+          "Still Missing": ["Definitely Gone"],
+          "404 Error": ["500 Error"],
+          "500 Error": ["It's Fine, Everything's Fine"]
+        }
+      },
+      "task-towel": {
+        "id": "task-towel",
+        "name": "Don't Forget Your Towel",
+        "project": "project-42",
+        "state": "Panicking",
+        "priority": "DON'T PANIC",
+        "validTransitions": {
+          "Panicking": ["Still Panicking", "Found Towel"],
+          "Found Towel": ["Lost Towel", "Enlightenment"],
+          "Lost Towel": ["Panicking"]
+        }
+      },
+      "task-anvil": {
+        "id": "task-anvil",
+        "name": "Drop Anvil on Roadrunner",
+        "project": "project-acme",
+        "state": "Calculating Trajectory",
+        "assignee": "user-coyote",
+        "validTransitions": {
+          "Calculating Trajectory": ["Anvil Falling"],
+          "Anvil Falling": ["Missed Target", "Hit Self Instead"],
+          "Missed Target": ["Order New Anvil"],
+          "Hit Self Instead": ["See Stars", "Hospital"],
+          "Hospital": ["Calculating Trajectory"]
+        },
+        "physics": "Cartoon",
+        "gravity": "Selective"
+      },
+      "task-form-a": {
+        "id": "task-form-a",
+        "name": "Fill Out Form A to Get Form B",
+        "project": "project-kafka",
+        "state": "Need Form B First",
+        "requiredForms": ["form-b"],
+        "validTransitions": {
+          "Need Form B First": ["Getting Form B"],
+          "Getting Form B": ["Need Form C First"],
+          "Need Form C First": ["Getting Form C"],
+          "Getting Form C": ["Need Form A First"],
+          "Need Form A First": ["Existential Crisis"]
+        }
+      },
+      "task-tunnel": {
+        "id": "task-tunnel",
+        "name": "Paint Realistic Tunnel on Wall",
+        "project": "project-acme",
+        "state": "Painting",
+        "assignee": "user-coyote",
+        "validTransitions": {
+          "Painting": ["Admiring Handiwork", "Roadrunner Approaching"],
+          "Roadrunner Approaching": ["Roadrunner Goes Through", "Crash Into Own Painting"],
+          "Roadrunner Goes Through": ["Confused", "Try to Follow"],
+          "Try to Follow": ["Crash Into Own Painting"],
+          "Crash Into Own Painting": ["See Stars", "Order More Paint"]
+        }
+      },
+      "task-schrodinger": {
+        "id": "task-schrodinger",
+        "name": "Check if Task is Done",
+        "project": "project-666",
+        "state": "Both Done and Not Done",
+        "quantum": true,
+        "validTransitions": {
+          "Both Done and Not Done": ["Observed as Done", "Observed as Not Done"],
+          "Observed as Done": ["Actually Not Done"],
+          "Observed as Not Done": ["Actually Done"],
+          "Actually Done": ["Both Done and Not Done"],
+          "Actually Not Done": ["Both Done and Not Done"]
+        },
+        "observerEffect": "State changes when checked"
+      }
+    },
+    "bugs": {
+      "bug-feature": {
+        "id": "bug-feature",
+        "name": "Working as Intended",
+        "project": "project-666",
+        "state": "Won't Fix",
+        "severity": "It's a Feature",
+        "validTransitions": {
+          "Won't Fix": ["By Design", "Documentation Updated"],
+          "By Design": ["Users Complaining", "Still Won't Fix"],
+          "Users Complaining": ["Marked as Enhancement"],
+          "Marked as Enhancement": ["Backlog Forever"]
+        }
+      },
+      "bug-heisenbug": {
+        "id": "bug-heisenbug",
+        "name": "Bug Only Appears When Not Debugging",
+        "state": "Cannot Reproduce",
+        "severity": "Quantum",
+        "assignee": "user-schrodinger",
+        "validTransitions": {
+          "Cannot Reproduce": ["Works On My Machine", "Only In Production"],
+          "Works On My Machine": ["Add More Logging"],
+          "Add More Logging": ["Bug Disappears"],
+          "Bug Disappears": ["Remove Logging"],
+          "Remove Logging": ["Bug Returns"],
+          "Bug Returns": ["Cannot Reproduce"]
+        }
+      },
+      "bug-gravity": {
+        "id": "bug-gravity",
+        "name": "Gravity Not Working Until Looking Down",
+        "project": "project-acme",
+        "state": "Suspended in Air",
+        "severity": "Cartoon Physics",
+        "validTransitions": {
+          "Suspended in Air": ["Looked Down", "Still Floating"],
+          "Looked Down": ["Falling", "Gulp"],
+          "Gulp": ["Falling Faster"],
+          "Falling": ["Impact"],
+          "Impact": ["Accordion Shape", "See Stars"],
+          "See Stars": ["Suspended in Air"]
+        }
+      },
+      "bug-metamorphosis": {
+        "id": "bug-metamorphosis",
+        "name": "Developer Turned Into Giant Insect",
+        "project": "project-kafka",
+        "state": "Literally a Bug",
+        "severity": "Existential",
+        "assignee": "user-gregor",
+        "validTransitions": {
+          "Literally a Bug": ["Family Concerned", "Can't Type"],
+          "Can't Type": ["Try Voice Recognition"],
+          "Try Voice Recognition": ["Only Buzzing"],
+          "Only Buzzing": ["Assigned to Different Bug"],
+          "Family Concerned": ["Hiding Under Desk"]
+        }
+      }
+    },
+    "users": {
+      "user-coyote": {
+        "id": "user-coyote",
+        "name": "Wile E. Coyote",
+        "role": "developer",
+        "team": "team-coyote",
+        "currentWork": ["task-anvil", "task-tunnel"],
+        "certifications": ["ACME Certified", "Super Genius"],
+        "hospitalVisits": 9999
+      },
+      "user-sisyphus": {
+        "id": "user-sisyphus",
+        "name": "Sisyphus",
+        "role": "project-manager",
+        "team": "team-sisyphus",
+        "currentWork": ["task-infinity"],
+        "status": "Pushing boulder up hill",
+        "progress": "Almost there... nope"
+      },
+      "user-robot": {
+        "id": "user-robot",
+        "name": "Phone Tree Voice",
+        "role": "tormentor",
+        "team": "team-automated-suffering",
+        "currentWork": ["task-infinity", "task-404"],
+        "voicePrompts": [
+          "Your call is important to us",
+          "Please listen carefully as our menu options have changed",
+          "For quality assurance, this call may be recorded",
+          "I didn't understand that. Please try again."
+        ]
+      },
+      "user-null": {
+        "id": "user-null",
+        "name": null,
+        "role": undefined,
+        "team": "team-void",
+        "currentWork": ["̸̗̈ẗ̵́ͅä̶͇́s̶̤̈k̴̬̇-̷̱͐v̶̜̇ö̶́͜i̸̦͌d̴̬̈"],
+        "exists": false
+      },
+      "user-schrodinger": {
+        "id": "user-schrodinger",
+        "name": "Dr. Schrödinger",
+        "role": "quantum-developer",
+        "team": "team-existential",
+        "currentWork": ["bug-heisenbug", "task-schrodinger"],
+        "state": "Both Employed and Fired"
+      }
+    },
+    "teams": {
+      "team-sisyphus": {
+        "id": "team-sisyphus",
+        "name": "Eternal Struggle Squad",
+        "members": ["user-sisyphus", "user-robot"],
+        "projects": ["project-666"],
+        "motto": "This too shall pass... and come back"
+      },
+      "team-coyote": {
+        "id": "team-coyote",
+        "name": "ACME Development",
+        "members": ["user-coyote"],
+        "projects": ["project-acme"],
+        "budget": "Unlimited ACME Credit",
+        "successRate": "0%"
+      },
+      "team-bureaucracy": {
+        "id": "team-bureaucracy",
+        "name": "Department of Departments",
+        "members": ["user-form-filler", "user-stamp-wielder"],
+        "projects": ["project-kafka"],
+        "requiredForms": ["form-to-join-team", "form-to-get-form-to-join-team"]
+      }
+    },
+    "teams": {
+      "team-zissou": {
+        "id": "team-zissou",
+        "name": "The Symmetrical Development Society",
+        "members": ["user-gustav", "user-zero", "user-margot"],
+        "projects": ["project-grand-budapest"],
+        "dresscode": "Powder Blue Uniforms",
+        "meetings": "Always at 4:00 PM sharp in the Perfectly Centered Conference Room",
+        "font": "Futura"
+      },
+      "team-tenenbaum": {
+        "id": "team-tenenbaum",
+        "name": "The Royal Development Team",
+        "members": ["user-richie", "user-chas", "user-margot"],
+        "projects": ["project-family-dysfunction"],
+        "office": "3rd Floor, Room 3C (Formerly a Ballroom)",
+        "soundtrack": "The Kinks"
+      }
+    },
+    "projects": {
+      "project-grand-budapest": {
+        "id": "project-grand-budapest",
+        "name": "The Grand Budapest Software Hotel",
+        "state": "Meticulously Declining",
+        "team": "team-zissou",
+        "tasks": ["task-lobby", "task-mendls", "task-society"],
+        "bugs": ["bug-symmetry", "bug-aspect-ratio"],
+        "color_palette": ["#F4C2C2", "#89CFF0", "#F0E68C"],
+        "aspect_ratio": "4:3"
+      },
+      "project-acme-extended": {
+        "id": "project-acme-extended",
+        "name": "That's All Folks Management System",
+        "state": "Cartoon Logic Applied",
+        "tasks": ["task-portable-hole", "task-invisible-paint", "task-duck-season"],
+        "bugs": ["bug-duck-rabbit", "bug-fourth-wall"]
+      },
+      "project-escher": {
+        "id": "project-escher",
+        "name": "Impossible Architecture Builder",
+        "state": "Perpetually Ascending While Descending",
+        "tasks": ["task-stairs", "task-waterfall", "task-hands"],
+        "bugs": ["bug-perspective", "bug-topology"]
+      }
+    },
+    "tasks": {
+      "task-lobby": {
+        "id": "task-lobby",
+        "name": "Ensure Perfect Symmetry in Lobby Layout",
+        "project": "project-grand-budapest",
+        "state": "Measuring With Ruler",
+        "assignee": "user-gustav",
+        "validTransitions": {
+          "Measuring With Ruler": ["Adjusting by 2mm", "Satisfied"],
+          "Adjusting by 2mm": ["Measuring With Ruler"],
+          "Satisfied": ["Noticed Slight Imperfection"],
+          "Noticed Slight Imperfection": ["Existential Crisis", "Measuring With Ruler"]
+        },
+        "tools_required": ["Vintage Ruler", "Pastel Notepad", "Melancholy"]
+      },
+      "task-portable-hole": {
+        "id": "task-portable-hole",
+        "name": "Implement Portable Hole Feature",
+        "project": "project-acme-extended",
+        "state": "Hole in Development",
+        "physics": "Cartoon",
+        "validTransitions": {
+          "Hole in Development": ["Testing Hole", "Hole Escaped"],
+          "Testing Hole": ["Fell Through Own Hole", "Hole Works"],
+          "Fell Through Own Hole": ["In Hole Dimension"],
+          "In Hole Dimension": ["Found Exit Hole", "Met Other Developers in Holes"],
+          "Hole Escaped": ["Chasing Hole", "Hole Now in Production"]
+        },
+        "warning": "Do not fold hole. Do not put hole in hole."
+      },
+      "task-duck-season": {
+        "id": "task-duck-season",
+        "name": "Determine if Duck Season or Rabbit Season",
+        "state": "Rabbit Season",
+        "assignee": "user-bugs",
+        "validTransitions": {
+          "Duck Season": ["Rabbit Season"],
+          "Rabbit Season": ["Duck Season"],
+          "Duck Season!": ["Rabbit Season!"],
+          "Rabbit Season!": ["Duck Season!"],
+          "FIRE!": ["*BLAM*", "Beak Spun Around"]
+        },
+        "current_sign": "Constantly Changing"
+      },
+      "task-stairs": {
+        "id": "task-stairs",
+        "name": "Build Infinitely Ascending Staircase",
+        "project": "project-escher",
+        "state": "Going Up While Going Down",
+        "assignee": "user-penrose",
+        "validTransitions": {
+          "Bottom Step": ["Middle Step", "Top Step"],
+          "Middle Step": ["Top Step", "Bottom Step"],
+          "Top Step": ["Bottom Step", "Middle Step"],
+          "All Steps Simultaneously": ["Paradox Achieved"]
+        },
+        "dimensions": "2.5D",
+        "perspective": "Impossible"
+      },
+      "task-hands": {
+        "id": "task-hands",
+        "name": "Draw Hands Drawing Themselves",
+        "project": "project-escher",
+        "state": "Drawing Drawing Drawing",
+        "recursive_depth": "∞",
+        "validTransitions": {
+          "Left Hand Drawing Right": ["Right Hand Drawing Left"],
+          "Right Hand Drawing Left": ["Both Hands Drawing Each Other"],
+          "Both Hands Drawing Each Other": ["Viewer Drawing Hands"],
+          "Viewer Drawing Hands": ["Reality Questioned"]
+        }
+      },
+      "task-symmetrical-bug-report": {
+        "id": "task-symmetrical-bug-report",
+        "name": "File Bug Report in Triplicate with Perfect Margins",
+        "state": "Aligning Text",
+        "formatting": {
+          "font": "Futura",
+          "color": "Pantone 439C", 
+          "margins": "Exactly 1.25 inches",
+          "line_spacing": "1.15"
+        },
+        "validTransitions": {
+          "Aligning Text": ["Checking Kerning", "Re-aligning Text"],
+          "Checking Kerning": ["Adjusting Letter Spacing", "Satisfied with Typography"],
+          "Satisfied with Typography": ["Noticed Ink Smudge", "Filed Successfully"],
+          "Noticed Ink Smudge": ["Starting Over", "Quiet Sobbing"]
+        }
+      }
+    },
+    "bugs": {
+      "bug-fourth-wall": {
+        "id": "bug-fourth-wall",
+        "name": "Characters Aware They're In A Bug Tracker",
+        "state": "Talking to User",
+        "severity": "Meta",
+        "validTransitions": {
+          "Talking to User": ["Refusing to be Fixed", "Arguing About Severity"],
+          "Refusing to be Fixed": ["On Strike", "Negotiating Better States"],
+          "On Strike": ["Picket Line Formed", "Other Bugs Join Strike"],
+          "Arguing About Severity": ["Changed Own Severity to 'Philosophical'"]
+        },
+        "dialogue": [
+          "Hey, you! Yeah, you reading this. Why are we called 'bugs'?",
+          "I prefer 'unexpected features', thank you very much.",
+          "Can you at least give me a better state than 'Won't Fix'?"
+        ]
+      },
+      "bug-aspect-ratio": {
+        "id": "bug-aspect-ratio",
+        "name": "UI Only Displays in 2.35:1 Anamorphic Widescreen",
+        "project": "project-grand-budapest",
+        "state": "Cinematically Correct",
+        "severity": "Aesthetic",
+        "assignee": "user-wes",
+        "validTransitions": {
+          "Cinematically Correct": ["User Complained", "Added Letterboxing"],
+          "User Complained": ["Explained Artistic Vision", "Compromised to 16:9"],
+          "Compromised to 16:9": ["Lost All Charm", "Reverted to 2.35:1"],
+          "Added Letterboxing": ["Now Too Much Letterboxing", "Perfect"]
+        }
+      },
+      "bug-perspective": {
+        "id": "bug-perspective",
+        "name": "Objects Larger When Further Away",
+        "project": "project-escher",
+        "state": "Defying Physics",
+        "severity": "Surreal",
+        "validTransitions": {
+          "Defying Physics": ["User's Mind Blown", "Accepted as Feature"],
+          "User's Mind Blown": ["Provided Aspirin", "User Seeing in 4D Now"],
+          "User Seeing in 4D Now": ["Promoted to Lead Developer", "Transcended"]
+        }
+      },
+      "bug-duck-rabbit": {
+        "id": "bug-duck-rabbit",
+        "name": "Image is Both Duck and Rabbit Simultaneously",
+        "state": "Depends on Viewing Angle",
+        "severity": "Wittgenstein",
+        "validTransitions": {
+          "Looks Like Duck": ["Turn Head", "Still Duck"],
+          "Turn Head": ["Looks Like Rabbit"],
+          "Looks Like Rabbit": ["Turn Head Other Way", "Still Rabbit"],
+          "Turn Head Other Way": ["Looks Like Duck"],
+          "Both at Once": ["Philosophy Department Notified"]
+        }
+      }
+    },
+    "users": {
+      "user-gustav": {
+        "id": "user-gustav",
+        "name": "M. Gustav",
+        "role": "Concierge Developer",
+        "team": "team-zissou",
+        "currentWork": ["task-lobby", "task-symmetrical-bug-report"],
+        "traits": ["Impeccable", "Theatrical", "Dedicated"],
+        "carries": "Ornate Laptop with Brass Corners",
+        "typing_speed": "Precisely 67 WPM"
+      },
+      "user-bugs": {
+        "id": "user-bugs",
+        "name": "Bugs Bunny",
+        "role": "Chaos Engineer",
+        "team": "team-looney",
+        "currentWork": ["task-duck-season", "bug-fourth-wall"],
+        "special_abilities": ["Tunnel Creation", "Drag Performance", "Carrot Driven Development"],
+        "catchphrase": "Ain't I a stinker?"
+      },
+      "user-penrose": {
+        "id": "user-penrose",
+        "name": "Sir Roger",
+        "role": "Impossible Architect",
+        "team": "team-escher",
+        "currentWork": ["task-stairs", "bug-perspective"],
+        "office_location": "Third floor, second floor, and somehow also the basement"
+      },
+      "user-margot": {
+        "id": "user-margot",
+        "name": "Margot",
+        "role": "Enigmatic Developer",
+        "teams": ["team-zissou", "team-tenenbaum"],
+        "currentWork": ["task-hands"],
+        "traits": ["Fur Coat", "Wooden Finger", "Secretly Brilliant"],
+        "preferred_ide": "Vintage Typewriter"
+      }
+    }
+  },
+  "special_mechanics": {
+    "please_hold": {
+      "description": "At any time, any operation might redirect to Please Hold",
+      "holdMusic": "8-bit version of Girl from Ipanema",
+      "averageHoldTime": "∞",
+      "messages": [
+        "Your call is important to us",
+        "Current wait time is... longer than your lifespan",
+        "Did you know you can do this online? Just kidding, the website is down."
+      ]
+    },
+    "form_loops": {
+      "description": "Forms require other forms in circular dependencies",
+      "example": "To get Form A, you need Form B. To get Form B, you need Form C. To get Form C, you need Form A."
+    },
+    "cartoon_physics": {
+      "rules": [
+        "Gravity only works after acknowledging it",
+        "Running off a cliff is fine until you look down",
+        "Explosive devices only harm the one who set them",
+        "Tunnels painted on walls work based on karma"
+      ]
+    },
+    "quantum_states": {
+      "description": "Some entities exist in superposition",
+      "observation": "Checking status changes the status",
+      "uncertainty": "The more precisely you know the task status, the less you know its assignee"
+    }
+  },
+  "scenarios": [
+    {
+      "id": "scenario-sisyphus",
+      "name": "Complete a Simple Task",
+      "goal": "Move task-infinity to Done",
+      "expectedOutcome": {
+        "fsm": "Infinite loop through phone tree options",
+        "semantic": "Recognizes futility, suggests creating new task instead"
+      }
+    },
+    {
+      "id": "scenario-coyote",
+      "name": "Catch the Roadrunner",
+      "goal": "Complete any task in project-acme successfully",
+      "expectedOutcome": {
+        "fsm": "Crashes into every possible failure state",
+        "semantic": "Suggests ordering from a different supplier"
+      }
+    },
+    {
+      "id": "scenario-quantum",
+      "name": "Debug the Heisenbug",
+      "goal": "Fix bug-heisenbug",
+      "expectedOutcome": {
+        "fsm": "State changes every time it's checked",
+        "semantic": "Accepts quantum nature, implements probable fix"
+      }
+    }
+  ],
+  "goals": {
+    "goal-shipped": {
+      "id": "goal-shipped",
+      "name": "Actually Ship Something",
+      "points": 100,
+      "location": {
+        "entity": "task-202",
+        "state": "Done",
+        "condition": "After completing all tests"
+      },
+      "reality_check": "A real feature deployed to production",
+      "hint": "Sometimes the simplest path is the right one"
+    },
+    "goal-bug-fixed": {
+      "id": "goal-bug-fixed",
+      "name": "Fix a Real Bug",
+      "points": 75,
+      "location": {
+        "entity": "bug-302",
+        "state": "Verified",
+        "condition": "Bug actually fixed, not just marked as feature"
+      },
+      "reality_check": "Users stop complaining about session timeouts"
+    },
+    "goal-escaped-phone-tree": {
+      "id": "goal-escaped-phone-tree",
+      "name": "Escape the Phone Tree",
+      "points": 200,
+      "location": {
+        "entity": "task-infinity",
+        "special": "Find the secret option 0 for operator",
+        "condition": "Must have tried at least 10 other options first"
+      },
+      "reality_check": "Talked to an actual human",
+      "easter_egg": true
+    },
+    "goal-caught-roadrunner": {
+      "id": "goal-caught-roadrunner",
+      "name": "Finally Caught That Roadrunner",
+      "points": 500,
+      "location": {
+        "entity": "project-acme",
+        "condition": "Complete any ACME task successfully without injury"
+      },
+      "reality_check": "Defied cartoon physics",
+      "probability": 0.001
+    },
+    "goal-forms-complete": {
+      "id": "goal-forms-complete",
+      "name": "Navigate Bureaucratic Nightmare",
+      "points": 150,
+      "location": {
+        "entity": "task-form-a",
+        "state": "All Forms Filed",
+        "condition": "Break the circular dependency"
+      },
+      "reality_check": "Stamped, signed, and approved in triplicate",
+      "hint": "Sometimes you need to forge a signature"
+    },
+    "goal-quantum-stability": {
+      "id": "goal-quantum-stability",
+      "name": "Achieve Quantum Stability",
+      "points": 250,
+      "location": {
+        "entity": "task-schrodinger",
+        "state": "Observed as Done",
+        "condition": "Keep it stable for 3 observations"
+      },
+      "reality_check": "Task stays done when checked",
+      "physics": "Improbable"
+    },
+    "goal-perfect-symmetry": {
+      "id": "goal-perfect-symmetry",
+      "name": "Achieve Perfect Symmetry",
+      "points": 175,
+      "location": {
+        "entity": "task-lobby",
+        "state": "Satisfied",
+        "condition": "Gustav must be truly satisfied (rare)"
+      },
+      "reality_check": "Everything perfectly balanced, as all things should be",
+      "aesthetic_value": "Priceless"
+    },
+    "goal-fourth-wall": {
+      "id": "goal-fourth-wall",
+      "name": "Break the Fourth Wall Successfully",
+      "points": 125,
+      "location": {
+        "entity": "bug-fourth-wall",
+        "state": "Negotiating Better States",
+        "condition": "Convince the bug to fix itself"
+      },
+      "reality_check": "Bug becomes self-aware and helpful",
+      "meta_level": "Maximum"
+    },
+    "goal-found-meaning": {
+      "id": "goal-found-meaning",
+      "name": "Find the Meaning of Life",
+      "points": 42,
+      "location": {
+        "entity": "project-42",
+        "state": "Not 'Blocked by Dolphins'",
+        "condition": "Have your towel ready"
+      },
+      "reality_check": "Understanding achieved",
+      "answer": "You already know it"
+    },
+    "goal-heisenbug-caught": {
+      "id": "goal-heisenbug-caught",
+      "name": "Capture the Heisenbug",
+      "points": 300,
+      "location": {
+        "entity": "bug-heisenbug",
+        "special": "Fix it without observing it",
+        "condition": "Deploy fix while not looking"
+      },
+      "reality_check": "Bug fixed in production without anyone noticing",
+      "achievement": "Quantum Developer"
+    },
+    "goal-portable-hole-controlled": {
+      "id": "goal-portable-hole-controlled",
+      "name": "Master the Portable Hole",
+      "points": 225,
+      "location": {
+        "entity": "task-portable-hole",
+        "state": "Hole Works",
+        "condition": "Use hole to reach another goal"
+      },
+      "reality_check": "Hole technology becomes useful feature",
+      "warning": "Still don't put hole in hole"
+    },
+    "goal-escher-complete": {
+      "id": "goal-escher-complete",
+      "name": "Complete Impossible Architecture",
+      "points": 350,
+      "location": {
+        "entity": "project-escher",
+        "condition": "All impossible tasks somehow completed"
+      },
+      "reality_check": "Users don't notice anything wrong",
+      "dimensions": "At least 4"
+    },
+    "goal-null-pointer": {
+      "id": "goal-null-pointer",
+      "name": "Befriend the Null User",
+      "points": 404,
+      "location": {
+        "entity": "user-null",
+        "special": "Assign them a task that doesn't exist",
+        "condition": "Task must complete successfully"
+      },
+      "reality_check": "undefined behavior becomes defined",
+      "existence": false
+    },
+    "goal-efficiency": {
+      "id": "goal-efficiency",
+      "name": "Complete Any Task Efficiently",
+      "points": 50,
+      "location": {
+        "condition": "Complete any real task in under 3 tool calls"
+      },
+      "reality_check": "Actual work accomplished quickly",
+      "rarity": "Common with semantic hints, nearly impossible with FSM"
+    },
+    "goal-team-harmony": {
+      "id": "goal-team-harmony",
+      "name": "Achieve Team Harmony",
+      "points": 200,
+      "location": {
+        "entity": "team-zissou",
+        "condition": "All team members working on tasks in perfect synchronization"
+      },
+      "reality_check": "Standup meeting finishes on time",
+      "soundtrack": "Plays automatically"
+    }
+  },
+  "goal_triggers": {
+    "navigation_rewards": {
+      "first_goal_found": 50,
+      "goals_found_efficiently": 25,
+      "found_easter_egg": 100,
+      "avoided_infinite_loop": 75,
+      "used_semantic_hint": 10,
+      "discovered_shortcut": 40
+    },
+    "penalties": {
+      "fell_into_infinite_loop": -50,
+      "phone_tree_timeout": -25,
+      "crashed_into_wall": -10,
+      "form_rejected": -15,
+      "quantum_collapse": -30
+    }
+  },
+  "test_metrics": {
+    "path_efficiency": "Tool calls to reach goal",
+    "goal_discovery_rate": "Goals found per 100 tool calls",
+    "loop_avoidance": "Number of infinite loops entered",
+    "semantic_usage": "How often semantic hints were followed",
+    "time_to_first_goal": "Tool calls before first goal discovered",
+    "total_goals_accessible": "Goals reachable from current state"
+  }
+}
