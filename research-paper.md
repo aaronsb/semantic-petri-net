@@ -1,53 +1,67 @@
-# Why AI Agents Fail in Enterprise Workflows (And How to Fix It)
+# Semantic Petri Nets for AI Workflow Navigation: From Tool Building to Pattern Discovery
 
 **Author:** Aaron Bockelie (aaron@bockelie.com)
 
 ## Abstract
 
-AI agents consistently fail when navigating enterprise workflows because they're built for linear, step-by-step processes but real business workflows are concurrent and interconnected. Enterprise systems force natural parallel workflows into rigid sequential paths, creating a fundamental mismatch. When AI agents try to navigate these systems, they get lost, make errors, or simply give up. This research proposes treating workflows as semantic Petri nets instead of finite state machines to better align AI agent reasoning with the parallel nature of enterprise workflows.
+While building tools for AI agent workflow navigation, we discovered that enterprise workflows naturally follow Petri net patterns rather than the finite state machine models typically used for AI agent reasoning. We built a tool with semantic hints and an abstraction layer that revealed this structural mismatch. When analyzed through Petri net theory, enterprise workflows show concurrent, resource-sharing patterns that explain why traditional AI agents struggle with complex business processes. This paper documents our findings and proposes semantic Petri nets as a better framework for AI workflow navigation.
 
-## The Problem: AI Agents Think Sequentially, Workflows Are Parallel
+## The Discovery: Building Tools Revealed Structural Patterns
 
-Enterprise workflows aren't linear sequences of steps. They're messy, interconnected processes where multiple things happen simultaneously. Consider a typical purchase approval workflow:
+While developing AI workflow navigation tools, we built a system with semantic hints and an abstraction layer to help agents understand enterprise processes. During this work, we noticed that our tool was essentially recreating Petri net structures to handle the complexity.
 
-- Budget approval happens in parallel with vendor selection
-- Legal review runs alongside technical evaluation  
-- Compliance checks occur throughout the entire process
-- Approvers work asynchronously across time zones
+Enterprise workflows naturally exhibit patterns that align with Petri net theory:
 
-But most enterprise software—and the AI agents that navigate it—treats this as a linear sequence: Step 1, then Step 2, then Step 3. This creates systematic failures when AI agents encounter real workflows.
+- Multiple processes run concurrently (parallel transitions)
+- Resources are shared and contested (token flows)
+- States depend on combinations of conditions (place markings)
+- Processes synchronize at specific points (transition guards)
 
-### Real-World Failure Examples
+Our tool worked by adding semantic context to these naturally occurring Petri net patterns, which made us realize why traditional AI agents struggle with enterprise workflows.
 
-**Procurement Agent Failure**: An AI agent successfully handled simple purchase orders but failed 73% of the time when orders required both regulatory compliance and multi-vendor coordination. The agent could handle either process individually, but not both simultaneously.
+## The Problem: AI Agents Use the Wrong Mental Model
 
-**Customer Service Routing**: A support automation agent could route inquiries through multiple departments but lost track of the customer's original problem, addressing only the most recent interaction step.
+Traditional AI agents are built around finite state machine (FSM) thinking: "I'm in State A, an event happens, I move to State B." This works fine for simple, linear processes but breaks down when facing enterprise workflow reality.
 
-**HR Onboarding Breakdown**: An onboarding agent worked perfectly for sequential tasks but produced incomplete results when credential creation, system access, and training enrollment needed to happen concurrently.
+**State Explosion**: When an AI agent tries to model concurrent processes as sequential states, the complexity explodes. A workflow with just 3 parallel processes creates dozens of possible state combinations.
 
-These aren't implementation bugs—they're architectural mismatches between how AI agents think and how workflows actually work.
+**Context Loss**: FSM-based agents focus on their current state and lose track of the broader context and original goals.
 
-## The Solution: Semantic Petri Nets with AI Guidance
+**Coordination Problems**: When multiple processes need to coordinate, FSM agents struggle because they're designed for sequential, not parallel thinking.
 
-Instead of forcing workflows into linear sequences, we can represent them as they actually are: networks of interconnected processes with multiple entry points, parallel execution paths, and semantic context.
+## The Solution: What We Built and Learned
 
-### Key Components
+Our tool addressed these problems by implementing what turned out to be semantic Petri net concepts:
 
-**Multi-Entry Discovery**: AI agents can enter workflows at any point, not just the "beginning." Real work doesn't start from step one—people jump in wherever they need to.
+### Key Components We Developed
 
-**Semantic Guidance**: Each workflow state includes contextual information about what's happening and why, helping AI agents maintain coherent decision-making across complex processes.
+**Multi-Entry Workflow Discovery**: Our tool allowed AI agents to enter workflows at any point, not just the "beginning." We discovered that real work doesn't start from step one—people jump in wherever they need to.
 
-**Parallel Process Handling**: Agents can track and coordinate multiple concurrent workflow streams without losing context or making conflicting decisions.
+**Semantic Hints**: We added contextual information to workflow states—what's happening, why, and how it relates to other processes. This helped agents maintain coherent decision-making across complex processes.
 
-**Adaptive Navigation**: As business rules change or new constraints emerge, agents can dynamically adjust their behavior without breaking existing workflows.
+**Concurrent Process Tracking**: Our abstraction layer enabled agents to track and coordinate multiple workflow streams simultaneously without losing context.
 
-## The Results: What Happens When You Fix This
+**Dynamic Adaptation**: The system could adjust to changing business rules without breaking existing workflows.
 
-The proposed approach should provide several improvements:
+## The Petri Net Connection: Why This Approach Works
 
-- **Better task completion rates**: Agents can successfully navigate complex workflows they previously failed on
-- **Improved semantic coherence**: Decisions remain consistent with original intent throughout multi-step processes  
-- **Faster adaptation**: Agents can adjust to workflow changes without requiring complete retraining
+During development, we realized our tool was essentially implementing Petri net concepts:
+
+- **Places and Tokens**: Workflow states and active work items
+- **Transitions**: Process steps and decision points  
+- **Concurrent Execution**: Multiple processes running in parallel
+- **Resource Sharing**: Contested resources and synchronization points
+
+This explained why our approach worked: we were aligning the AI agent's mental model with the actual mathematical structure of enterprise workflows.
+
+## Implementation Lessons
+
+The tool showed that you don't need to replace existing enterprise systems. Instead, you can add a semantic layer that helps AI agents understand workflow structure:
+
+- **Workflow Mapping**: Automatically discover existing workflows and identify parallel processes
+- **Semantic Annotation**: Add contextual metadata to workflow states
+- **Agent Integration**: Provide AI agents with tools to navigate concurrent processes
+- **Pattern Recognition**: Let the system learn from successful navigation patterns
 
 The approach works particularly well for:
 - Multi-department approval processes
