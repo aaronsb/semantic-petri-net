@@ -1,0 +1,13 @@
+{
+  "name": "fsm-workflow-navigator",
+  "version": "1.0.0",
+  "description": "FSM-based workflow navigator MCP server",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}
