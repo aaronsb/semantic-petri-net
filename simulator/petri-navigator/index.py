@@ -59,6 +59,25 @@ class WorkflowPetriNet:
         }
         self._build_net()
     
+    def _get_place_name(self, name: str) -> str:
+        """Sanitize place names for SNAKES library compatibility"""
+        # Replace spaces with underscores and special characters with descriptive text
+        sanitized = name.replace(' ', '_')
+        sanitized = sanitized.replace('!', '_EXCL')
+        sanitized = sanitized.replace('(', '_LPAREN').replace(')', '_RPAREN')
+        sanitized = sanitized.replace("'", '_QUOTE')
+        sanitized = sanitized.replace(',', '_COMMA')
+        sanitized = sanitized.replace('.', '_DOT')
+        sanitized = sanitized.replace('-', '_')
+        sanitized = sanitized.replace(':', '_COLON')
+        sanitized = sanitized.replace('/', '_SLASH')
+        sanitized = sanitized.replace('\\', '_BACKSLASH')
+        sanitized = sanitized.replace('*', '_STAR')
+        # Remove multiple consecutive underscores
+        while '__' in sanitized:
+            sanitized = sanitized.replace('__', '_')
+        return sanitized.strip('_')
+    
     def _get_valid_states(self, entity):
         """Extract valid states list from validTransitions"""
         if 'validTransitions' in entity:
@@ -73,32 +92,34 @@ class WorkflowPetriNet:
         """Build the Petri net structure from workflow data"""
         # Create places for task states
         for task_id, task in WORKFLOW_DATA['entities']['tasks'].items():
-            # Extract valid states from transitions
+            # Extract valid states from transitions and include current state
             valid_states = set(task['validTransitions'].keys())
             for transitions in task['validTransitions'].values():
                 valid_states.update(transitions)
+            valid_states.add(task['state'])  # Ensure current state is included
             
             for state in valid_states:
-                place_name = f"{task_id}_{state}"
+                place_name = self._get_place_name(f"{task_id}_{state}")
                 self.net.add_place(Place(place_name, []))
             
             # Add initial token
-            initial_place = f"{task_id}_{task['state']}"
+            initial_place = self._get_place_name(f"{task_id}_{task['state']}")
             self.net.place(initial_place).add(task_id)
             self.tokens[task_id] = initial_place
         
         # Create places for bug states
         for bug_id, bug in WORKFLOW_DATA['entities']['bugs'].items():
-            # Extract valid states from transitions
+            # Extract valid states from transitions and include current state
             valid_states = set(bug['validTransitions'].keys())
             for transitions in bug['validTransitions'].values():
                 valid_states.update(transitions)
+            valid_states.add(bug['state'])  # Ensure current state is included
             
             for state in valid_states:
-                place_name = f"{bug_id}_{state}"
+                place_name = self._get_place_name(f"{bug_id}_{state}")
                 self.net.add_place(Place(place_name, []))
             
-            initial_place = f"{bug_id}_{bug['state']}"
+            initial_place = self._get_place_name(f"{bug_id}_{bug['state']}")
             self.net.place(initial_place).add(bug_id)
             self.tokens[bug_id] = initial_place
         
@@ -115,19 +136,19 @@ class WorkflowPetriNet:
             # Create transitions based on valid transition mappings
             for from_state, to_states in transitions.items():
                 for to_state in to_states:
-                    trans_name = f"{task_id}_{from_state}_to_{to_state}"
+                    trans_name = self._get_place_name(f"{task_id}_{from_state}_to_{to_state}")
                     
                     self.net.add_transition(Transition(trans_name))
-                    self.net.add_input(f"{task_id}_{from_state}", trans_name, Variable('token'))
-                    self.net.add_output(f"{task_id}_{to_state}", trans_name, Variable('token'))
+                    self.net.add_input(self._get_place_name(f"{task_id}_{from_state}"), trans_name, Variable('token'))
+                    self.net.add_output(self._get_place_name(f"{task_id}_{to_state}"), trans_name, Variable('token'))
                 
             # Add backward transitions where appropriate
             task_states = self._get_valid_states(task)
             if "In Progress" in task_states and "Open" in task_states:
-                trans_name = f"{task_id}_reopen"
+                trans_name = self._get_place_name(f"{task_id}_reopen")
                 self.net.add_transition(Transition(trans_name))
-                self.net.add_input(f"{task_id}_In Progress", trans_name, Variable('token'))
-                self.net.add_output(f"{task_id}_Open", trans_name, Variable('token'))
+                self.net.add_input(self._get_place_name(f"{task_id}_In Progress"), trans_name, Variable('token'))
+                self.net.add_output(self._get_place_name(f"{task_id}_Open"), trans_name, Variable('token'))
     
     def _add_bug_transitions(self):
         """Add transitions for bug state changes"""
@@ -137,11 +158,11 @@ class WorkflowPetriNet:
             # Create transitions based on valid transition mappings
             for from_state, to_states in transitions.items():
                 for to_state in to_states:
-                    trans_name = f"{bug_id}_{from_state}_to_{to_state}"
+                    trans_name = self._get_place_name(f"{bug_id}_{from_state}_to_{to_state}")
                     
                     self.net.add_transition(Transition(trans_name))
-                    self.net.add_input(f"{bug_id}_{from_state}", trans_name, Variable('token'))
-                    self.net.add_output(f"{bug_id}_{to_state}", trans_name, Variable('token'))
+                    self.net.add_input(self._get_place_name(f"{bug_id}_{from_state}"), trans_name, Variable('token'))
+                    self.net.add_output(self._get_place_name(f"{bug_id}_{to_state}"), trans_name, Variable('token'))
     
     def _add_semantic_transitions(self):
         """Add high-level semantic transitions that cross multiple states"""
@@ -152,18 +173,34 @@ class WorkflowPetriNet:
                 open_idx = self._get_valid_states(task).index("Open")
                 if open_idx < len(self._get_valid_states(task)) - 1:
                     next_state = self._get_valid_states(task)[open_idx + 1]
-                    trans_name = f"start_work_{task_id}"
+                    trans_name = self._get_place_name(f"start_work_{task_id}")
                     self.net.add_transition(Transition(trans_name))
-                    self.net.add_input(f"{task_id}_Open", trans_name, Variable('token'))
-                    self.net.add_output(f"{task_id}_{next_state}", trans_name, Variable('token'))
+                    self.net.add_input(self._get_place_name(f"{task_id}_Open"), trans_name, Variable('token'))
+                    self.net.add_output(self._get_place_name(f"{task_id}_{next_state}"), trans_name, Variable('token'))
         
-        # Complete task (any non-Done state -> Done)
+        # Complete task (any state -> terminal states)
         for task_id, task in WORKFLOW_DATA['entities']['tasks'].items():
-            for state in self._get_valid_states(task)[:-1]:  # All states except Done
-                trans_name = f"complete_{task_id}_from_{state}"
-                self.net.add_transition(Transition(trans_name))
-                self.net.add_input(f"{task_id}_{state}", trans_name, Variable('token'))
-                self.net.add_output(f"{task_id}_Done", trans_name, Variable('token'))
+            valid_states = self._get_valid_states(task)
+            # Find terminal states (states with no outgoing transitions)
+            terminal_states = []
+            for state in valid_states:
+                if state in task['validTransitions'] and not task['validTransitions'][state]:
+                    terminal_states.append(state)
+            
+            # If no terminal states found, try common completion states
+            if not terminal_states:
+                for completion_state in ['Done', 'Complete', 'Finished', 'Closed']:
+                    if completion_state in valid_states:
+                        terminal_states.append(completion_state)
+            
+            # Create completion transitions to terminal states
+            for terminal_state in terminal_states:
+                for state in valid_states:
+                    if state != terminal_state:
+                        trans_name = self._get_place_name(f"complete_{task_id}_from_{state}")
+                        self.net.add_transition(Transition(trans_name))
+                        self.net.add_input(self._get_place_name(f"{task_id}_{state}"), trans_name, Variable('token'))
+                        self.net.add_output(self._get_place_name(f"{task_id}_{terminal_state}"), trans_name, Variable('token'))
     
     def get_enabled_transitions(self, entity_id: Optional[str] = None) -> list[str]:
         """Get all currently enabled transitions"""
