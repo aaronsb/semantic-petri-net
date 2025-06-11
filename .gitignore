@@ -1,0 +1,23 @@
+# Assembled paper outputs - keep the repo clean
+complete-research-paper.md
+assembled-paper.md
+full-paper.md
+
+# Any other assembled variations
+*-assembled.md
+*-complete.md
+*-full.md
+
+# Temporary files
+*.tmp
+*.temp
+
+# Editor files
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
