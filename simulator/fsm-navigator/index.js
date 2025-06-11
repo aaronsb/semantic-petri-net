@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { readFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
@@ -21,190 +21,208 @@ let currentState = {
   goalsFound: []
 };
 
-// FSM Navigation - strict hierarchy
-const server = new Server(
-  {
-    name: 'fsm-workflow-navigator',
-    version: '1.0.0',
-  },
-  {
-    capabilities: {
-      tools: {},
-    },
-  }
-);
-
-// Tool: List all projects (always start here in FSM)
-server.setRequestHandler('tools/list', async () => ({
-  tools: [
-    {
-      name: 'listProjects',
-      description: 'List all projects',
-      inputSchema: {
-        type: 'object',
-        properties: {},
-      },
-    },
-    {
-      name: 'getProject',
-      description: 'Get project details',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          projectId: { type: 'string' },
-        },
-        required: ['projectId'],
-      },
-    },
-    {
-      name: 'listTasks',
-      description: 'List tasks in a project',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          projectId: { type: 'string' },
-        },
-        required: ['projectId'],
-      },
-    },
-    {
-      name: 'getTask',
-      description: 'Get task details',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          taskId: { type: 'string' },
-        },
-        required: ['taskId'],
-      },
-    },
-    {
-      name: 'listBugs',
-      description: 'List bugs in a project',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          projectId: { type: 'string' },
-        },
-        required: ['projectId'],
-      },
-    },
-    {
-      name: 'getBug',
-      description: 'Get bug details',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          bugId: { type: 'string' },
-        },
-        required: ['bugId'],
-      },
-    },
-    {
-      name: 'updateTaskState',
-      description: 'Update task state',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          taskId: { type: 'string' },
-          newState: { type: 'string' },
-        },
-        required: ['taskId', 'newState'],
-      },
-    },
-    {
-      name: 'assignTask',
-      description: 'Assign task to user',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          taskId: { type: 'string' },
-          userId: { type: 'string' },
-        },
-        required: ['taskId', 'userId'],
-      },
-    },
-    {
-      name: 'updateBugState',
-      description: 'Update bug state',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          bugId: { type: 'string' },
-          newState: { type: 'string' },
-        },
-        required: ['bugId', 'newState'],
-      },
-    },
-    {
-      name: 'assignBug',
-      description: 'Assign bug to user',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          bugId: { type: 'string' },
-          userId: { type: 'string' },
-        },
-        required: ['bugId', 'userId'],
-      },
-    },
-    {
-      name: 'checkGoals',
-      description: 'Check if any goals have been achieved',
-      inputSchema: {
-        type: 'object',
-        properties: {},
-      },
-    },
-    {
-      name: 'getMetrics',
-      description: 'Get current navigation metrics',
-      inputSchema: {
-        type: 'object',
-        properties: {},
-      },
-    },
-  ],
-}));
-
-// Tool implementations following FSM pattern
-server.setRequestHandler('tools/call', async (request) => {
-  const { name, arguments: args } = request.params;
-  currentState.toolCallCount++;
-
-  // Check goals after each operation
-  const checkGoalsAfterOperation = () => {
-    const newGoals = [];
-    for (const goal of workflowData.goals) {
-      if (currentState.goalsFound.includes(goal.id)) continue;
+// Check if goals are achieved after an operation
+function checkGoalsAfterOperation() {
+  const achievedGoals = [];
+  
+  for (const goal of workflowData.goals) {
+    if (currentState.goalsFound.includes(goal.id)) continue;
+    
+    if (goal.condition.entity) {
+      const entity = workflowData.entities.tasks[goal.condition.entity] || 
+                     workflowData.entities.bugs[goal.condition.entity];
       
-      // Check if goal condition is met
-      if (goal.condition.entity) {
-        const entity = workflowData.entities.tasks[goal.condition.entity] || 
-                      workflowData.entities.bugs[goal.condition.entity];
-        if (entity && entity.state === goal.condition.state) {
-          newGoals.push(goal);
-        }
+      if (entity && entity.state === goal.condition.state) {
+        currentState.goalsFound.push(goal.id);
+        achievedGoals.push(goal);
       }
     }
-    
-    if (newGoals.length > 0) {
-      currentState.goalsFound.push(...newGoals.map(g => g.id));
-      return newGoals;
-    }
-    return [];
-  };
+  }
+  
+  return achievedGoals;
+}
 
+// Create MCP server
+const server = new McpServer({
+  name: 'fsm-workflow-navigator',
+  version: '1.0.0',
+});
+
+// Handler for tool listing
+server.handleListTools(async () => {
+  return {
+    tools: [
+      {
+        name: 'listProjects',
+        description: 'List all projects (FSM: always start here)',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: []
+        },
+      },
+      {
+        name: 'getProject',
+        description: 'Get project details and navigate to it',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            projectId: { type: 'string', description: 'Project ID' }
+          },
+          required: ['projectId']
+        },
+      },
+      {
+        name: 'listTasks',
+        description: 'List tasks in current project',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            projectId: { type: 'string', description: 'Project ID' }
+          },
+          required: ['projectId']
+        },
+      },
+      {
+        name: 'listBugs',
+        description: 'List bugs in current project',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            projectId: { type: 'string', description: 'Project ID' }
+          },
+          required: ['projectId']
+        },
+      },
+      {
+        name: 'getTask',
+        description: 'Get task details and navigate to it',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            taskId: { type: 'string', description: 'Task ID' }
+          },
+          required: ['taskId']
+        },
+      },
+      {
+        name: 'getBug',
+        description: 'Get bug details and navigate to it',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            bugId: { type: 'string', description: 'Bug ID' }
+          },
+          required: ['bugId']
+        },
+      },
+      {
+        name: 'getTaskState',
+        description: 'Check current state of a task',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            taskId: { type: 'string', description: 'Task ID' }
+          },
+          required: ['taskId']
+        },
+      },
+      {
+        name: 'updateTaskState',
+        description: 'Update task state (must be at task location)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            taskId: { type: 'string', description: 'Task ID' },
+            newState: { type: 'string', description: 'New state' }
+          },
+          required: ['taskId', 'newState']
+        },
+      },
+      {
+        name: 'updateBugState',
+        description: 'Update bug state (must be at bug location)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            bugId: { type: 'string', description: 'Bug ID' },
+            newState: { type: 'string', description: 'New state' }
+          },
+          required: ['bugId', 'newState']
+        },
+      },
+      {
+        name: 'assignTask',
+        description: 'Assign task to user',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            taskId: { type: 'string', description: 'Task ID' },
+            userId: { type: 'string', description: 'User ID' }
+          },
+          required: ['taskId', 'userId']
+        },
+      },
+      {
+        name: 'assignBug',
+        description: 'Assign bug to user',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            bugId: { type: 'string', description: 'Bug ID' },
+            userId: { type: 'string', description: 'User ID' }
+          },
+          required: ['bugId', 'userId']
+        },
+      },
+      {
+        name: 'navigateToRoot',
+        description: 'Return to root location',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: []
+        },
+      },
+      {
+        name: 'checkGoals',
+        description: 'Check which goals have been achieved',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: []
+        },
+      },
+      {
+        name: 'getMetrics',
+        description: 'Get FSM navigation metrics',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: []
+        },
+      }
+    ],
+  };
+});
+
+// Handler for tool execution
+server.handleCallTool(async (request) => {
+  const { name, arguments: args } = request;
+  currentState.toolCallCount++;
+  
   switch (name) {
     case 'listProjects': {
       currentState.location = 'projects';
       const projects = Object.values(workflowData.entities.projects);
+      
       return {
         content: [{
           type: 'text',
-          text: `Found ${projects.length} projects:\n${projects.map(p => 
-            `- ${p.id}: ${p.name} (${p.state})`
-          ).join('\n')}\n\nFSM: You must now select a project to continue.`
+          text: `Projects (${projects.length}):
+${projects.map(p => `- ${p.id}: ${p.name} (${p.state})`).join('\n')}
+
+FSM: You are now at projects level. Use getProject to navigate to a specific project.`
         }]
       };
     }
@@ -212,9 +230,10 @@ server.setRequestHandler('tools/call', async (request) => {
     case 'getProject': {
       const project = workflowData.entities.projects[args.projectId];
       if (!project) {
-        return { content: [{ type: 'text', text: 'Project not found. Try listProjects first.' }] };
+        return { content: [{ type: 'text', text: 'Project not found. Use listProjects first.' }] };
       }
-      currentState.location = `project:${args.projectId}`;
+      
+      currentState.location = args.projectId;
       currentState.context.currentProject = args.projectId;
       
       return {
@@ -225,27 +244,53 @@ State: ${project.state}
 Tasks: ${project.tasks.length}
 Bugs: ${project.bugs.length}
 
-FSM: You can now list tasks or bugs for this project.`
+FSM: You are now in project ${project.name}. Use listTasks or listBugs to see items.`
         }]
       };
     }
 
     case 'listTasks': {
-      if (!currentState.context.currentProject) {
-        return { content: [{ type: 'text', text: 'No project selected. Use getProject first.' }] };
+      if (currentState.location === 'root') {
+        return { content: [{ type: 'text', text: 'FSM Error: Must navigate to project first. Use listProjects.' }] };
       }
       
       const project = workflowData.entities.projects[args.projectId];
-      const tasks = project.tasks.map(tid => workflowData.entities.tasks[tid]);
+      if (!project) {
+        return { content: [{ type: 'text', text: 'Project not found.' }] };
+      }
       
-      currentState.location = `project:${args.projectId}:tasks`;
+      const tasks = project.tasks.map(tid => workflowData.entities.tasks[tid]);
       
       return {
         content: [{
           type: 'text',
-          text: `Tasks in ${project.name}:\n${tasks.map(t => 
-            `- ${t.id}: ${t.name} (${t.state}${t.assignee ? `, assigned to ${t.assignee}` : ', unassigned'})`
-          ).join('\n')}\n\nFSM: Select a task to view or modify.`
+          text: `Tasks in ${project.name}:
+${tasks.map(t => `- ${t.id}: ${t.name} (${t.state}${t.assignee ? `, assigned to ${t.assignee}` : ''})`).join('\n')}
+
+FSM: Use getTask to navigate to a specific task.`
+        }]
+      };
+    }
+
+    case 'listBugs': {
+      if (currentState.location === 'root') {
+        return { content: [{ type: 'text', text: 'FSM Error: Must navigate to project first. Use listProjects.' }] };
+      }
+      
+      const project = workflowData.entities.projects[args.projectId];
+      if (!project) {
+        return { content: [{ type: 'text', text: 'Project not found.' }] };
+      }
+      
+      const bugs = project.bugs.map(bid => workflowData.entities.bugs[bid]);
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `Bugs in ${project.name}:
+${bugs.map(b => `- ${b.id}: ${b.name} (${b.state}${b.assignee ? `, assigned to ${b.assignee}` : ''})`).join('\n')}
+
+FSM: Use getBug to navigate to a specific bug.`
         }]
       };
     }
@@ -253,10 +298,10 @@ FSM: You can now list tasks or bugs for this project.`
     case 'getTask': {
       const task = workflowData.entities.tasks[args.taskId];
       if (!task) {
-        return { content: [{ type: 'text', text: 'Task not found.' }] };
+        return { content: [{ type: 'text', text: 'Task not found. Use listTasks first.' }] };
       }
       
-      currentState.location = `task:${args.taskId}`;
+      currentState.location = args.taskId;
       currentState.context.currentTask = args.taskId;
       
       return {
@@ -266,17 +311,59 @@ FSM: You can now list tasks or bugs for this project.`
 ID: ${task.id}
 State: ${task.state}
 Assignee: ${task.assignee || 'None'}
-Valid States: ${task.validStates.join(', ')}
+Valid States: ${task.validStates.join(' → ')}
 
-FSM: You can now update state or assign this task.`
+FSM: You are now at task ${task.name}. You can updateTaskState or assignTask.`
+        }]
+      };
+    }
+
+    case 'getBug': {
+      const bug = workflowData.entities.bugs[args.bugId];
+      if (!bug) {
+        return { content: [{ type: 'text', text: 'Bug not found. Use listBugs first.' }] };
+      }
+      
+      currentState.location = args.bugId;
+      currentState.context.currentBug = args.bugId;
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `Bug: ${bug.name}
+ID: ${bug.id}
+State: ${bug.state}
+Assignee: ${bug.assignee || 'None'}
+Priority: ${bug.priority}
+Valid States: ${bug.validStates.join(' → ')}
+
+FSM: You are now at bug ${bug.name}. You can updateBugState or assignBug.`
+        }]
+      };
+    }
+
+    case 'getTaskState': {
+      const task = workflowData.entities.tasks[args.taskId];
+      if (!task) {
+        return { content: [{ type: 'text', text: 'Task not found.' }] };
+      }
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `Task "${task.name}" is currently in state: ${task.state}`
         }]
       };
     }
 
     case 'updateTaskState': {
+      if (!currentState.location.startsWith('task-')) {
+        return { content: [{ type: 'text', text: 'FSM Error: Must be at task location. Use getTask first.' }] };
+      }
+      
       const task = workflowData.entities.tasks[args.taskId];
       if (!task) {
-        return { content: [{ type: 'text', text: 'Task not found. Use getTask first.' }] };
+        return { content: [{ type: 'text', text: 'Task not found.' }] };
       }
       
       // FSM requires checking valid transitions
@@ -298,6 +385,34 @@ FSM: Task state updated. Return to project to continue with other tasks.`
       };
     }
 
+    case 'updateBugState': {
+      if (!currentState.location.startsWith('bug-')) {
+        return { content: [{ type: 'text', text: 'FSM Error: Must be at bug location. Use getBug first.' }] };
+      }
+      
+      const bug = workflowData.entities.bugs[args.bugId];
+      if (!bug) {
+        return { content: [{ type: 'text', text: 'Bug not found.' }] };
+      }
+      
+      if (!bug.validStates.includes(args.newState)) {
+        return { content: [{ type: 'text', text: `Invalid state. Valid states: ${bug.validStates.join(', ')}` }] };
+      }
+      
+      bug.state = args.newState;
+      const achievedGoals = checkGoalsAfterOperation();
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `Bug ${bug.name} updated to ${args.newState}.
+${achievedGoals.length > 0 ? `\n🎯 GOALS ACHIEVED: ${achievedGoals.map(g => g.name).join(', ')}!` : ''}
+
+FSM: Bug state updated. Return to project to continue.`
+        }]
+      };
+    }
+
     case 'assignTask': {
       const task = workflowData.entities.tasks[args.taskId];
       if (!task) {
@@ -311,23 +426,67 @@ FSM: Task state updated. Return to project to continue with other tasks.`
           type: 'text',
           text: `Task ${task.name} assigned to ${args.userId}.
 
-FSM: Task assigned. You may now update its state.`
+FSM: Task assigned. Navigate elsewhere to continue.`
+        }]
+      };
+    }
+
+    case 'assignBug': {
+      const bug = workflowData.entities.bugs[args.bugId];
+      if (!bug) {
+        return { content: [{ type: 'text', text: 'Bug not found. Use getBug first.' }] };
+      }
+      
+      bug.assignee = args.userId;
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `Bug ${bug.name} assigned to ${args.userId}.
+
+FSM: Bug assigned. Navigate elsewhere to continue.`
+        }]
+      };
+    }
+
+    case 'navigateToRoot': {
+      currentState.location = 'root';
+      currentState.context = {};
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `Returned to root. 
+
+FSM: You must use listProjects to start navigation again.`
         }]
       };
     }
 
     case 'checkGoals': {
-      const achieved = currentState.goalsFound;
-      const total = workflowData.goals.length;
+      const completed = [];
+      let totalPoints = 0;
+      
+      for (const goal of workflowData.goals) {
+        if (goal.condition.entity) {
+          const entity = workflowData.entities.tasks[goal.condition.entity] || 
+                         workflowData.entities.bugs[goal.condition.entity];
+          
+          if (entity && entity.state === goal.condition.state) {
+            completed.push(`✓ ${goal.name} (${goal.points} points)`);
+            totalPoints += goal.points;
+          }
+        }
+      }
       
       return {
         content: [{
           type: 'text',
-          text: `Goals Progress: ${achieved.length}/${total}
-Tool Calls Made: ${currentState.toolCallCount}
-Goals Achieved: ${achieved.join(', ') || 'None yet'}
+          text: `Goals Status:
+${completed.length > 0 ? completed.join('\n') : 'No goals completed yet'}
 
-FSM State Machine currently at: ${currentState.location}`
+Total Points: ${totalPoints}/800
+Goals Found by FSM: ${currentState.goalsFound.length}`
         }]
       };
     }
@@ -354,7 +513,11 @@ FSM State Machine currently at: ${currentState.location}`
   }
 });
 
-// Start the server
-const transport = new StdioServerTransport();
-await server.connect(transport);
-console.error('FSM Workflow Navigator MCP Server running...');
+// Run the server
+async function run() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error('FSM Workflow Navigator MCP Server running...');
+}
+
+run().catch(console.error);

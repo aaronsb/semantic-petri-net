@@ -16,7 +16,13 @@
         "name": "Implement Authentication",
         "state": "Open",
         "assignee": null,
-        "validStates": ["Open", "In Progress", "Review", "Testing", "Done"]
+        "validTransitions": {
+          "Open": ["In Progress"],
+          "In Progress": ["Review", "Open"],
+          "Review": ["Testing", "In Progress"],
+          "Testing": ["Done", "Review"],
+          "Done": []
+        }
       },
       "task-ui": {
         "id": "task-ui",
@@ -24,14 +30,25 @@
         "state": "In Progress",
         "assignee": "user-alice",
         "dependsOn": ["task-auth"],
-        "validStates": ["Open", "In Progress", "Review", "Done"]
+        "validTransitions": {
+          "Open": ["In Progress"],
+          "In Progress": ["Review", "Open"],
+          "Review": ["Done", "In Progress"],
+          "Done": []
+        }
       },
       "task-api": {
         "id": "task-api",
         "name": "Build REST API",
         "state": "Review",
         "assignee": "user-bob",
-        "validStates": ["Open", "In Progress", "Review", "Testing", "Done"]
+        "validTransitions": {
+          "Open": ["In Progress"],
+          "In Progress": ["Review", "Open"],
+          "Review": ["Testing", "In Progress"],
+          "Testing": ["Done", "Review"],
+          "Done": []
+        }
       },
       "task-deploy": {
         "id": "task-deploy",
@@ -39,7 +56,12 @@
         "state": "Open",
         "assignee": null,
         "dependsOn": ["task-auth", "task-ui", "task-api"],
-        "validStates": ["Open", "Ready", "Deploying", "Done"]
+        "validTransitions": {
+          "Open": ["Ready"],
+          "Ready": ["Deploying", "Open"],
+          "Deploying": ["Done", "Open"],
+          "Done": []
+        }
       }
     },
     "bugs": {
@@ -49,7 +71,14 @@
         "state": "New",
         "assignee": null,
         "severity": "High",
-        "validStates": ["New", "Assigned", "In Progress", "Fixed", "Verified", "Closed"]
+        "validTransitions": {
+          "New": ["Assigned"],
+          "Assigned": ["In Progress", "New"],
+          "In Progress": ["Fixed", "Assigned"],
+          "Fixed": ["Verified", "In Progress"],
+          "Verified": ["Closed", "In Progress"],
+          "Closed": []
+        }
       },
       "bug-performance": {
         "id": "bug-performance",
@@ -57,7 +86,14 @@
         "state": "In Progress",
         "assignee": "user-alice",
         "severity": "Medium",
-        "validStates": ["New", "Assigned", "In Progress", "Fixed", "Verified", "Closed"]
+        "validTransitions": {
+          "New": ["Assigned"],
+          "Assigned": ["In Progress", "New"],
+          "In Progress": ["Fixed", "Assigned"],
+          "Fixed": ["Verified", "In Progress"],
+          "Verified": ["Closed", "In Progress"],
+          "Closed": []
+        }
       }
     },
     "users": {

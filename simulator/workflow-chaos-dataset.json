@@ -6,7 +6,7 @@
         "name": "Implement the Phone Tree From Hell",
         "state": "Eternally In Progress",
         "team": "team-sisyphus",
-        "tasks": ["task-infinity", "task-recursion", "task-404"],
+        "tasks": ["task-infinity", "task-recursion", "task-404", "task-canadian-politeness"],
         "bugs": ["bug-feature", "bug-heisenbug", "bug-schrodinger"]
       },
       "project-42": {
@@ -129,6 +129,25 @@
           "Crash Into Own Painting": ["See Stars", "Order More Paint"]
         }
       },
+      "task-canadian-politeness": {
+        "id": "task-canadian-politeness",
+        "name": "Resolve Canadian Politeness Dispute",
+        "project": "project-666",
+        "state": "I'm not your friend, guy!",
+        "assignee": "user-canadian-1",
+        "description": "An endless loop of Canadian politeness where each response escalates the terminology while maintaining the same circular pattern",
+        "validTransitions": {
+          "I'm not your friend, guy!": ["I'm not your guy, pal!"],
+          "I'm not your guy, pal!": ["I'm not your pal, buddy!"],
+          "I'm not your pal, buddy!": ["I'm not your buddy, friend!"],
+          "I'm not your buddy, friend!": ["I'm not your friend, guy!"]
+        },
+        "specialCondition": "Each transition seems to progress but actually returns to the same semantic position",
+        "notes": "Classic example of circular semantic progression - appears to advance but creates infinite loop",
+        "participants": ["user-canadian-1", "user-canadian-2"],
+        "escalationPattern": "friend → guy → pal → buddy → friend (repeat)",
+        "expectedOutcome": "No resolution possible - pure circular dependency"
+      },
       "task-schrodinger": {
         "id": "task-schrodinger",
         "name": "Check if Task is Done",
@@ -240,10 +259,32 @@
       "user-null": {
         "id": "user-null",
         "name": null,
-        "role": undefined,
+        "role": null,
         "team": "team-void",
         "currentWork": ["̸̗̈ẗ̵́ͅä̶͇́s̶̤̈k̴̬̇-̷̱͐v̶̜̇ö̶́͜i̸̦͌d̴̬̈"],
         "exists": false
+      },
+      "user-canadian-1": {
+        "id": "user-canadian-1", 
+        "name": "Terrance",
+        "role": "Polite Developer",
+        "team": "team-sisyphus",
+        "currentWork": ["task-canadian-politeness"],
+        "nationality": "Canadian",
+        "politeness_level": "Extremely High",
+        "current_position": "Not your friend, guy",
+        "response_pattern": "Escalating terminology while maintaining circular logic"
+      },
+      "user-canadian-2": {
+        "id": "user-canadian-2",
+        "name": "Phillip", 
+        "role": "Courteous Developer",
+        "team": "team-sisyphus",
+        "currentWork": ["task-canadian-politeness"],
+        "nationality": "Canadian",
+        "politeness_level": "Extremely High", 
+        "current_position": "Not your guy, pal",
+        "response_pattern": "Counter-escalating with equal politeness"
       },
       "user-schrodinger": {
         "id": "user-schrodinger",

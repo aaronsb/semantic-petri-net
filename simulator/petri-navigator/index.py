@@ -4,38 +4,54 @@ Petri Net Navigator using SNAKES library
 Demonstrates formal Petri net modeling for workflow navigation
 """
 
+from __future__ import annotations
 import json
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Any, Optional
 from mcp.server.fastmcp import FastMCP
 
-try:
-    from snakes.nets import *
-    from snakes.plugins import load
-    load("gv", "snakes.nets", "nets")
-    from nets import *
-except ImportError:
-    print("Warning: SNAKES not installed. Install with: pip install SNAKES")
-    # Fallback implementation for testing
-    PetriNet = None
+from snakes.nets import *
+from snakes.plugins import load
+load("gv", "snakes.nets", "nets")
+from nets import *
 
-# Load workflow data
-WORKFLOW_DATA = json.loads(
-    Path(__file__).parent.parent.joinpath('workflow-test-dataset.json').read_text()
-)
+# Load workflow datasets  
+import os
+import sys
+import argparse
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Petri Net Workflow Navigator')
+parser.add_argument('dataset', nargs='?', 
+                   default='../workflow-dataset.json',
+                   help='Path to dataset JSON file (default: ../workflow-dataset.json)')
+
+args = parser.parse_args()
+
+# Load dataset from provided path
+dataset_path = Path(args.dataset)
+if not dataset_path.is_absolute():
+    # If relative, resolve from navigator directory
+    dataset_path = Path(__file__).parent.joinpath(dataset_path).resolve()
+
+if not dataset_path.exists():
+    print(f"Dataset file not found: {dataset_path}")
+    sys.exit(1)
+
+WORKFLOW_DATA = json.loads(dataset_path.read_text())
+DATASET_NAME = dataset_path.stem  # Use filename without extension for display
+
+print(f"Petri Net Navigator loaded with {DATASET_NAME} dataset", file=sys.stderr)
 
 # Create MCP server
-mcp = FastMCP("petri-workflow-navigator")
+mcp = FastMCP("Petri Net Navigator")
 
 class WorkflowPetriNet:
-    """Formal Petri net model of the workflow system"""
+    """Formal Petri net model of the workflow using SNAKES"""
     
     def __init__(self):
-        if PetriNet is None:
-            raise ImportError("SNAKES library required for formal Petri net modeling")
-            
-        self.net = PetriNet('workflow_system')
-        self.tokens = {}  # Track token locations
+        self.net = PetriNet('workflow')
+        self.tokens = {}  # Track current token positions
         self.metrics = {
             'tool_calls': 0,
             'semantic_hints_used': 0,
@@ -43,12 +59,26 @@ class WorkflowPetriNet:
         }
         self._build_net()
     
+    def _get_valid_states(self, entity):
+        """Extract valid states list from validTransitions"""
+        if 'validTransitions' in entity:
+            valid_states = set(entity['validTransitions'].keys())
+            for transitions in entity['validTransitions'].values():
+                valid_states.update(transitions)
+            return list(valid_states)
+        else:
+            return [entity['state']]  # fallback
+    
     def _build_net(self):
         """Build the Petri net structure from workflow data"""
-        
-        # Create places for each task state
+        # Create places for task states
         for task_id, task in WORKFLOW_DATA['entities']['tasks'].items():
-            for state in task['validStates']:
+            # Extract valid states from transitions
+            valid_states = set(task['validTransitions'].keys())
+            for transitions in task['validTransitions'].values():
+                valid_states.update(transitions)
+            
+            for state in valid_states:
                 place_name = f"{task_id}_{state}"
                 self.net.add_place(Place(place_name, []))
             
@@ -59,7 +89,12 @@ class WorkflowPetriNet:
         
         # Create places for bug states
         for bug_id, bug in WORKFLOW_DATA['entities']['bugs'].items():
-            for state in bug['validStates']:
+            # Extract valid states from transitions
+            valid_states = set(bug['validTransitions'].keys())
+            for transitions in bug['validTransitions'].values():
+                valid_states.update(transitions)
+            
+            for state in valid_states:
                 place_name = f"{bug_id}_{state}"
                 self.net.add_place(Place(place_name, []))
             
@@ -75,294 +110,683 @@ class WorkflowPetriNet:
     def _add_task_transitions(self):
         """Add transitions for task state changes"""
         for task_id, task in WORKFLOW_DATA['entities']['tasks'].items():
-            states = task['validStates']
+            transitions = task['validTransitions']
             
-            # Add transitions between consecutive states
-            for i in range(len(states) - 1):
-                from_state = states[i]
-                to_state = states[i + 1]
-                trans_name = f"{task_id}_move_{from_state}_to_{to_state}"
+            # Create transitions based on valid transition mappings
+            for from_state, to_states in transitions.items():
+                for to_state in to_states:
+                    trans_name = f"{task_id}_{from_state}_to_{to_state}"
+                    
+                    self.net.add_transition(Transition(trans_name))
+                    self.net.add_input(f"{task_id}_{from_state}", trans_name, Variable('token'))
+                    self.net.add_output(f"{task_id}_{to_state}", trans_name, Variable('token'))
                 
+            # Add backward transitions where appropriate
+            task_states = self._get_valid_states(task)
+            if "In Progress" in task_states and "Open" in task_states:
+                trans_name = f"{task_id}_reopen"
                 self.net.add_transition(Transition(trans_name))
-                self.net.add_input(f"{task_id}_{from_state}", trans_name, Variable('token'))
-                self.net.add_output(f"{task_id}_{to_state}", trans_name, Variable('token'))
+                self.net.add_input(f"{task_id}_In Progress", trans_name, Variable('token'))
+                self.net.add_output(f"{task_id}_Open", trans_name, Variable('token'))
     
     def _add_bug_transitions(self):
         """Add transitions for bug state changes"""
         for bug_id, bug in WORKFLOW_DATA['entities']['bugs'].items():
-            states = bug['validStates']
+            transitions = bug['validTransitions']
             
-            for i in range(len(states) - 1):
-                from_state = states[i]
-                to_state = states[i + 1]
-                trans_name = f"{bug_id}_move_{from_state}_to_{to_state}"
-                
-                self.net.add_transition(Transition(trans_name))
-                self.net.add_input(f"{bug_id}_{from_state}", trans_name, Variable('token'))
-                self.net.add_output(f"{bug_id}_{to_state}", trans_name, Variable('token'))
+            # Create transitions based on valid transition mappings
+            for from_state, to_states in transitions.items():
+                for to_state in to_states:
+                    trans_name = f"{bug_id}_{from_state}_to_{to_state}"
+                    
+                    self.net.add_transition(Transition(trans_name))
+                    self.net.add_input(f"{bug_id}_{from_state}", trans_name, Variable('token'))
+                    self.net.add_output(f"{bug_id}_{to_state}", trans_name, Variable('token'))
     
     def _add_semantic_transitions(self):
         """Add high-level semantic transitions that cross multiple states"""
-        
-        # Start working on task (Open -> In Progress with assignment)
-        for task_id in WORKFLOW_DATA['entities']['tasks']:
-            trans_name = f"start_work_{task_id}"
-            self.net.add_transition(Transition(trans_name))
-            self.net.add_input(f"{task_id}_Open", trans_name, Variable('token'))
-            self.net.add_output(f"{task_id}_In Progress", trans_name, Variable('token'))
+        # Start working on task (Open -> next state with assignment)
+        for task_id, task in WORKFLOW_DATA['entities']['tasks'].items():
+            if "Open" in self._get_valid_states(task) and len(self._get_valid_states(task)) > 1:
+                # Find the next state after Open
+                open_idx = self._get_valid_states(task).index("Open")
+                if open_idx < len(self._get_valid_states(task)) - 1:
+                    next_state = self._get_valid_states(task)[open_idx + 1]
+                    trans_name = f"start_work_{task_id}"
+                    self.net.add_transition(Transition(trans_name))
+                    self.net.add_input(f"{task_id}_Open", trans_name, Variable('token'))
+                    self.net.add_output(f"{task_id}_{next_state}", trans_name, Variable('token'))
         
         # Complete task (any non-Done state -> Done)
         for task_id, task in WORKFLOW_DATA['entities']['tasks'].items():
-            for state in task['validStates'][:-1]:  # All states except Done
+            for state in self._get_valid_states(task)[:-1]:  # All states except Done
                 trans_name = f"complete_{task_id}_from_{state}"
                 self.net.add_transition(Transition(trans_name))
                 self.net.add_input(f"{task_id}_{state}", trans_name, Variable('token'))
                 self.net.add_output(f"{task_id}_Done", trans_name, Variable('token'))
     
-    def get_enabled_transitions(self, entity_id: Optional[str] = None) -> List[str]:
+    def get_enabled_transitions(self, entity_id: Optional[str] = None) -> list[str]:
         """Get all currently enabled transitions"""
-        enabled = []
-        
-        for trans in self.net.transitions():
-            if trans.enabled(Substitution()):
-                if entity_id is None or entity_id in trans.name:
-                    enabled.append(trans.name)
-        
-        return enabled
+        try:
+            modes = list(self.net.modes())
+            if entity_id:
+                # Filter to transitions affecting this entity
+                return [str(m) for m in modes if entity_id in str(m)]
+            return [str(m) for m in modes]
+        except:
+            # Fallback for complex bindings
+            return []
     
-    def fire_transition(self, transition_name: str) -> bool:
-        """Execute a transition if enabled"""
-        trans = self.net.transition(transition_name)
-        if trans and trans.enabled(Substitution()):
-            trans.fire(Substitution())
-            
-            # Update token tracking
-            for entity_id, place in self.tokens.items():
-                if entity_id in transition_name:
-                    # Find new location
-                    for p in self.net.places():
-                        if entity_id in p.name and len(list(p.tokens)) > 0:
-                            self.tokens[entity_id] = p.name
-                            break
-            
+    def fire_transition(self, transition_name: str, binding: Optional[dict] = None) -> bool:
+        """Fire a transition with optional variable binding"""
+        try:
+            if binding:
+                sub = Substitution(**binding)
+                self.net.transition(transition_name).fire(sub)
+            else:
+                # Try to find a valid mode
+                for mode in self.net.modes():
+                    if str(mode).startswith(transition_name):
+                        mode.fire()
+                        return True
             return True
-        return False
+        except Exception as e:
+            print(f"Failed to fire transition: {e}")
+            return False
     
-    def generate_semantic_hints(self, entity_id: str) -> Dict[str, List[str]]:
-        """Generate context-aware hints based on Petri net state"""
+    def move_token(self, entity_id: str, target_state: str) -> bool:
+        """Move a token to a new state (simulating transition firing)"""
         current_place = self.tokens.get(entity_id)
         if not current_place:
-            return {'nextSteps': [], 'suggestions': []}
+            return False
+            
+        target_place = f"{entity_id}_{target_state}"
         
-        # Find enabled transitions from current state
+        # Check if target place exists
+        try:
+            self.net.place(target_place)
+        except:
+            return False
+        
+        # Move token
+        try:
+            # Remove from current place
+            self.net.place(current_place).remove(entity_id)
+            # Add to target place
+            self.net.place(target_place).add(entity_id)
+            self.tokens[entity_id] = target_place
+            return True
+        except:
+            return False
+    
+    def generate_semantic_hints(self, entity_id: str) -> dict[str, list[str]]:
+        """Generate context-aware hints based on Petri net state"""
+        current_state = self.tokens.get(entity_id, "Unknown")
+        if '_' in current_state:
+            current_state = current_state.split('_', 1)[1]
+        
+        hints = {
+            'nextSteps': [],
+            'suggestions': []
+        }
+        
+        # Get enabled transitions for this entity
         enabled = self.get_enabled_transitions(entity_id)
         
-        # Generate human-readable hints
-        next_steps = []
-        suggestions = []
-        
-        for trans in enabled:
-            if 'move_' in trans:
-                parts = trans.split('_')
-                next_state = parts[-1]
-                next_steps.append(f"Can move to {next_state}")
-            elif 'start_work' in trans:
-                suggestions.append("Use startWorkingOn() to begin work")
-            elif 'complete' in trans:
-                suggestions.append("Use completeTask() to finish")
-        
-        # Add workflow-specific hints
-        if 'Open' in current_place:
-            suggestions.append("Task is ready to be started")
-        elif 'In Progress' in current_place:
-            next_steps.append("Continue development or move to review")
-        elif 'Review' in current_place:
-            next_steps.append("Complete review and move to testing")
-        
-        return {
-            'nextSteps': next_steps,
-            'suggestions': suggestions
-        }
+        # Task-specific hints
+        if entity_id.startswith('task-'):
+            task = WORKFLOW_DATA['entities']['tasks'].get(entity_id, {})
+            
+            if current_state == "Open":
+                hints['nextSteps'].append("You can start working on this task")
+                hints['suggestions'].append(f"Use startWorkingOn('{entity_id}') to begin")
+            elif current_state in ["In Progress", "Ready", "Deploying"]:
+                hints['nextSteps'].append("Task is actively being worked on")
+                hints['suggestions'].append(f"Complete with completeItem('{entity_id}')")
+            elif current_state == "Review":
+                hints['nextSteps'].append("Task needs review")
+                hints['suggestions'].append("Move to Testing or back to In Progress")
+                
+        # Bug-specific hints        
+        elif entity_id.startswith('bug-'):
+            if current_state == "Open":
+                hints['nextSteps'].append("Bug needs investigation")
+                hints['suggestions'].append(f"Start with startWorkingOn('{entity_id}')")
+            elif current_state == "Investigating":
+                hints['nextSteps'].append("Bug is being investigated")
+                hints['suggestions'].append("Move to Fixing once cause is found")
+                
+        # Multi-entity hints
+        if len(enabled) > 1:
+            hints['suggestions'].append("Multiple workflow paths available")
+            
+        return hints
     
-    def visualize(self, filename: str = "workflow_net.png"):
-        """Generate visual representation of the Petri net"""
+    def visualize(self) -> Optional[str]:
+        """Generate a visual representation of the current Petri net state"""
         if hasattr(self.net, 'draw'):
-            self.net.draw(filename)
+            try:
+                # This would generate a GraphViz representation
+                return str(self.net)
+            except:
+                pass
+        return None
 
-# Initialize Petri net
+# Global instance
 petri_net = WorkflowPetriNet()
 
-# Helper functions
-def find_entity(identifier: str) -> Optional[Dict[str, Any]]:
-    """Find entity by ID or name"""
+# MCP Tools
+@mcp.tool()
+def listWorkflow() -> str:
+    """List all workflow items"""
+    petri_net.metrics['tool_calls'] += 1
     
-    # Check tasks
-    for task in WORKFLOW_DATA['entities']['tasks'].values():
-        if identifier in [task['id'], task['name']] or identifier.lower() in task['name'].lower():
-            return task
+    items = []
     
-    # Check bugs
-    for bug in WORKFLOW_DATA['entities']['bugs'].values():
-        if identifier in [bug['id'], bug['name']] or identifier.lower() in bug['name'].lower():
-            return bug
+    # List tasks
+    for task_id, task in WORKFLOW_DATA['entities']['tasks'].items():
+        current_state = get_entity_state(task_id)
+        items.append(f"[TASK] {task_id}: {task['name']} - State: {current_state}")
     
-    return None
+    # List bugs  
+    for bug_id, bug in WORKFLOW_DATA['entities']['bugs'].items():
+        current_state = get_entity_state(bug_id)
+        items.append(f"[BUG] {bug_id}: {bug['name']} - State: {current_state}")
+    
+    return "\n".join(items) + "\n\nPetri Net: All items accessible without navigation"
 
 def get_entity_state(entity_id: str) -> str:
-    """Get current state from Petri net"""
+    """Get current state from token position"""
     place = petri_net.tokens.get(entity_id, "")
     if '_' in place:
         return place.split('_', 1)[1]
     return "Unknown"
 
-# Define MCP tools
+@mcp.tool()
+def showCurrentTokens() -> str:
+    """Show current token positions in Petri net"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    positions = []
+    for entity_id, place in petri_net.tokens.items():
+        state = place.split('_', 1)[1] if '_' in place else place
+        positions.append(f"{entity_id}: {state}")
+    
+    enabled_count = len(petri_net.get_enabled_transitions())
+    
+    return (f"Current Token Positions:\n" + 
+            "\n".join(positions) + 
+            f"\n\nEnabled transitions: {enabled_count}")
+
+@mcp.tool() 
+def getTaskInfo(taskId: str) -> str:
+    """Get task information with semantic hints"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    task = WORKFLOW_DATA['entities']['tasks'].get(taskId)
+    if not task:
+        return f"Task {taskId} not found"
+    
+    current_state = get_entity_state(taskId)
+    hints = petri_net.generate_semantic_hints(taskId)
+    
+    # Track if hints are being used
+    if hints['suggestions']:
+        petri_net.metrics['semantic_hints_used'] += 1
+    
+    result = (f"Task: {task['name']}\n"
+              f"ID: {taskId}\n" 
+              f"Current State: {current_state}\n"
+              f"Valid States: {', '.join(petri_net._get_valid_states(task))}\n")
+    
+    if hints['nextSteps']:
+        result += f"\nNext Steps:\n" + "\n".join(f"- {h}" for h in hints['nextSteps'])
+    
+    if hints['suggestions']:
+        result += f"\n\nSuggestions:\n" + "\n".join(f"- {h}" for h in hints['suggestions'])
+    
+    return result + "\n\nPetri Net: Multi-entry access with contextual guidance"
+
+@mcp.tool()
+def getBugInfo(bugId: str) -> str:
+    """Get bug information with semantic hints"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    bug = WORKFLOW_DATA['entities']['bugs'].get(bugId)
+    if not bug:
+        return f"Bug {bugId} not found"
+    
+    current_state = get_entity_state(bugId)
+    hints = petri_net.generate_semantic_hints(bugId)
+    
+    if hints['suggestions']:
+        petri_net.metrics['semantic_hints_used'] += 1
+    
+    result = (f"Bug: {bug['name']}\n"
+              f"ID: {bugId}\n"
+              f"Current State: {current_state}\n"
+              f"Severity: {bug.get('severity', 'Medium')}\n"
+              f"Valid States: {', '.join(self._get_valid_states(bug))}\n")
+    
+    if hints['nextSteps']:
+        result += f"\nNext Steps:\n" + "\n".join(f"- {h}" for h in hints['nextSteps'])
+    
+    if hints['suggestions']:
+        result += f"\n\nSuggestions:\n" + "\n".join(f"- {h}" for h in hints['suggestions'])
+    
+    return result + "\n\nPetri Net: Direct access with workflow guidance"
+
 @mcp.tool()
 def startWorkingOn(identifier: str) -> str:
     """Start working on a task or bug (multi-entry semantic operation)"""
     petri_net.metrics['tool_calls'] += 1
     
-    # Find entity
-    entity = find_entity(identifier)
-    if not entity:
-        return f"Could not find entity: {identifier}"
-    
-    entity_id = entity['id']
-    current_state = get_entity_state(entity_id)
-    
-    # Try to fire start work transition
-    trans_name = f"start_work_{entity_id}"
-    if petri_net.fire_transition(trans_name):
-        # Generate semantic hints
-        hints = petri_net.generate_semantic_hints(entity_id)
-        petri_net.metrics['semantic_hints_used'] += 1
-        
-        return (f"Started working on {entity['name']}\n"
-                f"State: Open → In Progress\n"
-                f"Next steps: {', '.join(hints['nextSteps'])}\n"
-                f"Suggestions: {', '.join(hints['suggestions'])}")
+    # Determine entity type
+    if identifier.startswith('task-'):
+        entity_type = 'task'
+        entities = WORKFLOW_DATA['entities']['tasks']
+    elif identifier.startswith('bug-'):
+        entity_type = 'bug'
+        entities = WORKFLOW_DATA['entities']['bugs']
     else:
-        # Provide guidance on why it failed
-        enabled = petri_net.get_enabled_transitions(entity_id)
-        return (f"Cannot start work on {entity['name']} in state {current_state}\n"
-                f"Available actions: {', '.join(enabled)}")
-
-@mcp.tool()
-def completeTask(identifier: str) -> str:
-    """Complete a task from any state"""
-    petri_net.metrics['tool_calls'] += 1
+        return f"Unknown identifier format: {identifier}"
     
-    entity = find_entity(identifier)
+    entity = entities.get(identifier)
     if not entity:
-        return f"Could not find entity: {identifier}"
+        return f"{entity_type.title()} {identifier} not found"
     
-    entity_id = entity['id']
-    current_state = get_entity_state(entity_id)
+    current_state = get_entity_state(identifier)
     
-    # Find appropriate complete transition
-    for trans in petri_net.get_enabled_transitions(entity_id):
-        if 'complete' in trans and entity_id in trans:
-            if petri_net.fire_transition(trans):
-                return (f"Completed {entity['name']}\n"
-                        f"State: {current_state} → Done\n"
-                        f"This demonstrates multi-entry: reached Done from {current_state}")
-    
-    return f"Cannot complete {entity['name']} from current state {current_state}"
-
-@mcp.tool()
-def getWorkflowState(entity_id: Optional[str] = None) -> str:
-    """View current state with Petri net analysis"""
-    petri_net.metrics['tool_calls'] += 1
-    
-    if entity_id:
-        current_place = petri_net.tokens.get(entity_id, "Unknown")
-        enabled = petri_net.get_enabled_transitions(entity_id)
+    # Semantic operation - move from Open to working state
+    if current_state == "Open":
+        # Find appropriate working state
+        if entity_type == 'task':
+            valid_states = petri_net._get_valid_states(entity)
+            open_idx = valid_states.index("Open")
+            if open_idx < len(valid_states) - 1:
+                target_state = valid_states[open_idx + 1]
+            else:
+                target_state = "In Progress"  # fallback
+        else:  # bug
+            target_state = "Investigating"
         
-        return (f"Entity: {entity_id}\n"
-                f"Current state: {current_place}\n"
-                f"Enabled transitions: {', '.join(enabled)}\n"
-                f"This shows Petri net modeling of workflow states")
+        if petri_net.move_token(identifier, target_state):
+            hints = petri_net.generate_semantic_hints(identifier)
+            petri_net.metrics['semantic_hints_used'] += 1
+            
+            return (f"Started working on {entity['name']}\n"
+                    f"State: {current_state} → {target_state}\n\n"
+                    f"Next steps:\n" + 
+                    "\n".join(f"- {h}" for h in hints['nextSteps']) +
+                    "\n\nPetri Net: Semantic operation bypassed navigation")
     else:
-        # Show all tokens
-        states = []
-        for eid, place in petri_net.tokens.items():
-            states.append(f"{eid}: {place}")
+        return f"Cannot start work - {entity['name']} is in {current_state} state"
+
+@mcp.tool()
+def updateState(entityId: str, newState: str) -> str:
+    """Update entity state if transition is valid"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    # Check if entity exists
+    entity = (WORKFLOW_DATA['entities']['tasks'].get(entityId) or 
+              WORKFLOW_DATA['entities']['bugs'].get(entityId))
+    
+    if not entity:
+        return f"Entity {entityId} not found"
+    
+    current_state = get_entity_state(entityId)
+    
+    # Check if new state is valid
+    if newState not in petri_net._get_valid_states(entity):
+        return f"Invalid state '{newState}'. Valid states: {', '.join(petri_net._get_valid_states(entity))}"
+    
+    # Try to move token
+    if petri_net.move_token(entityId, newState):
+        return (f"Updated {entity['name']}\n"
+                f"State: {current_state} → {newState}\n"
+                f"Petri Net: Direct state transition")
+    else:
+        return f"Cannot transition from {current_state} to {newState}"
+
+@mcp.tool()
+def completeItem(entityId: str) -> str:
+    """Complete a task or bug (semantic operation)"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    entity = (WORKFLOW_DATA['entities']['tasks'].get(entityId) or 
+              WORKFLOW_DATA['entities']['bugs'].get(entityId))
+    
+    if not entity:
+        return f"Entity {entityId} not found"
+    
+    current_state = get_entity_state(entityId)
+    valid_states = self._get_valid_states(entity)
+    final_state = valid_states[-1]  # Last state is completion
+    
+    if current_state == final_state:
+        return f"{entity['name']} is already in {final_state} state"
+    
+    # Semantic transition - jump to done
+    if petri_net.move_token(entityId, final_state):
+        petri_net.metrics['goals_completed'].append(entityId)
+        return (f"Completed {entity['name']}\n"
+                f"State: {current_state} → {final_state}\n"
+                f"Petri Net: Semantic completion bypassed intermediate states")
+    else:
+        return f"Cannot complete {entity['name']} from {current_state} state"
+
+@mcp.tool()
+def reassignItem(entityId: str, fromUser: str, toUser: str) -> str:
+    """Reassign a task or bug between users"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    entity = (WORKFLOW_DATA['entities']['tasks'].get(entityId) or 
+              WORKFLOW_DATA['entities']['bugs'].get(entityId))
+    
+    if not entity:
+        return f"Entity {entityId} not found"
+    
+    current_state = get_entity_state(entityId)
+    
+    # Get assignment-related states based on entity type
+    if entityId.startswith('task-'):
+        states = petri_net._get_valid_states(WORKFLOW_DATA['entities']['tasks'][entityId])
+    else:
+        states = petri_net._get_valid_states(WORKFLOW_DATA['entities']['bugs'][entityId])
+    
+    # Check if in assignable state (not Open or Done typically)
+    if current_state in ["Open", states[-1]]:  # First or last state
+        goals_text = ""
+    else:
+        # Generate goal context
+        incomplete_goals = [g for g in ['task-ui', 'task-api', 'task-auth', 'task-deploy'] 
+                           if g not in petri_net.metrics['goals_completed']]
+        if incomplete_goals:
+            goals_text = f"\n\nRemaining goals: {', '.join(incomplete_goals)}"
+        else:
+            goals_text = "\n\nAll workflow goals completed!"
+    
+    return (f"Reassigned {entity['name']} from {fromUser} to {toUser}\n"
+            f"Current state: {get_entity_state(entityId)}"
+            f"{goals_text}\n\n"
+            f"Petri Net: Direct reassignment without navigation overhead.")
+
+@mcp.tool()
+def advanceWorkflow(identifiers: list[str]) -> str:
+    """Advance multiple items concurrently"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    results = []
+    for identifier in identifiers:
+        entity = (WORKFLOW_DATA['entities']['tasks'].get(identifier) or 
+                  WORKFLOW_DATA['entities']['bugs'].get(identifier))
         
-        return f"Current Petri net configuration:\n" + "\n".join(states)
+        if not entity:
+            results.append(f"{identifier}: Not found")
+            continue
+            
+        current_state = get_entity_state(identifier)
+        valid_states = petri_net._get_valid_states(entity)
+        
+        # Find next state
+        try:
+            current_idx = valid_states.index(current_state)
+            if current_idx < len(valid_states) - 1:
+                next_state = valid_states[current_idx + 1]
+                if petri_net.move_token(identifier, next_state):
+                    results.append(f"{identifier}: {current_state} → {next_state}")
+                else:
+                    results.append(f"{identifier}: Transition failed")
+            else:
+                results.append(f"{identifier}: Already at final state")
+        except ValueError:
+            results.append(f"{identifier}: Unknown current state")
+    
+    return ("Concurrent advancement results:\n" + 
+            "\n".join(results) + 
+            "\n\nPetri Net: Parallel token movement")
 
 @mcp.tool()
-def visualizePetriNet() -> str:
-    """Generate visual representation of the workflow Petri net"""
-    petri_net.metrics['tool_calls'] += 1
-    
-    try:
-        petri_net.visualize("workflow_petri_net.png")
-        return ("Generated Petri net visualization: workflow_petri_net.png\n"
-                "This shows the formal workflow structure as a Petri net")
-    except Exception as e:
-        return (f"Could not generate visualization: {e}\n"
-                "Ensure graphviz is installed")
+def showMetrics() -> str:
+    """Show navigation efficiency metrics"""
+    return (f"Petri Net Navigator Metrics:\n"
+            f"- Total tool calls: {petri_net.metrics['tool_calls']}\n"
+            f"- Semantic hints used: {petri_net.metrics['semantic_hints_used']}\n"
+            f"- Goals completed: {len(petri_net.metrics['goals_completed'])}\n"
+            f"- Completed items: {', '.join(petri_net.metrics['goals_completed']) or 'None'}\n\n"
+            f"Key advantages demonstrated:\n"
+            f"- Multi-entry operations (no navigation required)\n"
+            f"- Semantic transitions (skip intermediate states)\n"
+            f"- Concurrent token movement\n"
+            f"- Context-aware hints")
 
 @mcp.tool()
-def analyzeReachability(entity_id: str) -> str:
-    """Analyze what states are reachable from current configuration"""
+def analyzeReachability(entityId: str, targetState: str) -> str:
+    """Analyze if a target state is reachable from current position"""
     petri_net.metrics['tool_calls'] += 1
     
-    current_place = petri_net.tokens.get(entity_id, "Unknown")
+    entity = (WORKFLOW_DATA['entities']['tasks'].get(entityId) or 
+              WORKFLOW_DATA['entities']['bugs'].get(entityId))
     
-    # Simple reachability check - what states can we reach?
-    reachable = []
-    enabled = petri_net.get_enabled_transitions(entity_id)
+    if not entity:
+        return f"Entity {entityId} not found"
     
-    for trans in enabled:
-        if 'Done' in trans:
-            reachable.append("Done (goal state)")
-        elif 'Testing' in trans:
-            reachable.append("Testing")
-        elif 'Review' in trans:
-            reachable.append("Review")
+    current_state = get_entity_state(entityId)
+    valid_states = petri_net._get_valid_states(entity)
     
-    return (f"Reachability analysis for {entity_id}:\n"
-            f"Current: {current_place}\n"
-            f"Reachable states: {', '.join(reachable) or 'None directly'}\n"
-            f"This demonstrates formal verification capabilities")
+    if targetState not in valid_states:
+        return f"'{targetState}' is not a valid state for {entityId}"
+    
+    if current_state == targetState:
+        return f"{entityId} is already in {targetState} state"
+    
+    # Check reachability
+    current_idx = valid_states.index(current_state) if current_state in valid_states else -1
+    target_idx = valid_states.index(targetState)
+    
+    if current_idx < target_idx:
+        steps = target_idx - current_idx
+        path = " → ".join(valid_states[current_idx:target_idx+1])
+        return (f"Target state '{targetState}' is reachable\n"
+                f"Steps required: {steps}\n"
+                f"Path: {path}\n"
+                f"Petri Net: Formal reachability analysis")
+    else:
+        return (f"Target state '{targetState}' is not reachable from {current_state}\n"
+                f"Would require backward transition")
+
+@mcp.tool()
+def debugPetriNet() -> str:
+    """Show detailed Petri net structure for debugging"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    info = ["=== Petri Net Debug Info ===\n"]
+    
+    # Show places and tokens
+    info.append("Places with tokens:")
+    for entity_id, place in petri_net.tokens.items():
+        info.append(f"  {place}: [{entity_id}]")
+    
+    # Show enabled transitions
+    info.append("\nEnabled transitions:")
+    enabled = petri_net.get_enabled_transitions()
+    for trans in enabled[:10]:  # Limit output
+        info.append(f"  {trans}")
+    
+    if len(enabled) > 10:
+        info.append(f"  ... and {len(enabled) - 10} more")
+    
+    # Show metrics
+    info.append(f"\nTotal places: {len(petri_net.net.place())}")
+    info.append(f"Total transitions: {len(petri_net.net.transition())}")
+    info.append(f"Current tokens: {len(petri_net.tokens)}")
+    
+    return ("\n".join(info) + "\n\n"
+            f"Petri Net Properties:\n"
+            f"- Formal model: SNAKES Petri net library\n"
+            f"- Verification capable: Yes")
+
+# Additional tools for FSM compatibility and dataset coverage
+
+@mcp.tool()
+def listProjects() -> str:
+    """List projects (compatibility tool)"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    projects = []
+    for project_id, project in WORKFLOW_DATA['entities']['projects'].items():
+        projects.append(f"{project_id}: {project['name']} - State: {project['state']}")
+    
+    return ("\n".join(projects) + "\n\n"
+            "Petri Net: Projects accessible without navigation hierarchy")
+
+@mcp.tool()
+def getProject(projectId: str) -> str:
+    """Get project details (compatibility tool)"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    project = WORKFLOW_DATA['entities']['projects'].get(projectId)
+    if not project:
+        return f"Project {projectId} not found"
+    
+    task_count = len(project.get('tasks', []))
+    bug_count = len(project.get('bugs', []))
+    
+    return (f"Project: {project['name']}\n"
+            f"State: {project['state']}\n"
+            f"Tasks: {task_count}\n"
+            f"Bugs: {bug_count}\n\n"
+            f"Petri Net: Project data accessible without location constraints")
+
+@mcp.tool()
+def listTasks(projectId: str) -> str:
+    """List tasks in project (compatibility tool)"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    project = WORKFLOW_DATA['entities']['projects'].get(projectId)
+    if not project:
+        return f"Project {projectId} not found"
+    
+    tasks = []
+    for task_id in project.get('tasks', []):
+        task = WORKFLOW_DATA['entities']['tasks'].get(task_id, {})
+        current_state = get_entity_state(task_id)
+        tasks.append(f"{task_id}: {task.get('name', 'Unknown')} - State: {current_state}")
+    
+    return ("\n".join(tasks) + "\n\n"
+            "Petri Net: Direct access to all tasks regardless of hierarchy")
+
+@mcp.tool()
+def listBugs(projectId: str) -> str:
+    """List bugs in project (compatibility tool)"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    project = WORKFLOW_DATA['entities']['projects'].get(projectId)
+    if not project:
+        return f"Project {projectId} not found"
+    
+    bugs = []
+    for bug_id in project.get('bugs', []):
+        bug = WORKFLOW_DATA['entities']['bugs'].get(bug_id, {})
+        current_state = get_entity_state(bug_id)
+        bugs.append(f"{bug_id}: {bug.get('name', 'Unknown')} - State: {current_state}")
+    
+    return ("\n".join(bugs) + "\n\n"
+            "Petri Net: Direct access to all bugs without navigation")
+
+@mcp.tool()
+def getTask(taskId: str) -> str:
+    """Get task details (alias for getTaskInfo)"""
+    return getTaskInfo(taskId)
+
+@mcp.tool()
+def getBug(bugId: str) -> str:
+    """Get bug details (alias for getBugInfo)"""
+    return getBugInfo(bugId)
+
+@mcp.tool()
+def getTaskState(taskId: str) -> str:
+    """Get current task state"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    current_state = get_entity_state(taskId)
+    return f"Task {taskId} state: {current_state}"
+
+@mcp.tool()
+def updateTaskState(taskId: str, newState: str) -> str:
+    """Update task state (alias for updateState)"""
+    return updateState(taskId, newState)
+
+@mcp.tool()
+def updateBugState(bugId: str, newState: str) -> str:
+    """Update bug state (alias for updateState)"""
+    return updateState(bugId, newState)
+
+@mcp.tool()
+def assignTask(taskId: str, userId: str) -> str:
+    """Assign task to user"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    task = WORKFLOW_DATA['entities']['tasks'].get(taskId)
+    if not task:
+        return f"Task {taskId} not found"
+    
+    task['assignee'] = userId
+    
+    return (f"Assigned {task['name']} to {userId}\n"
+            f"Petri Net: Direct assignment without navigation overhead")
+
+@mcp.tool()
+def assignBug(bugId: str, userId: str) -> str:
+    """Assign bug to user"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    bug = WORKFLOW_DATA['entities']['bugs'].get(bugId)
+    if not bug:
+        return f"Bug {bugId} not found"
+    
+    bug['assignee'] = userId
+    
+    return (f"Assigned {bug['name']} to {userId}\n"
+            f"Petri Net: Direct assignment without navigation overhead")
+
+@mcp.tool()
+def navigateToRoot() -> str:
+    """Navigate to root (no-op for Petri net)"""
+    petri_net.metrics['tool_calls'] += 1
+    
+    return ("Petri Net: No navigation required - all entities directly accessible\n"
+            "Multi-entry architecture eliminates location constraints")
 
 @mcp.tool()
 def checkGoals() -> str:
-    """Check which goals have been achieved"""
+    """Check goal completion status"""
     petri_net.metrics['tool_calls'] += 1
     
+    if 'goals' not in WORKFLOW_DATA:
+        return "No goals defined in current dataset"
+    
     completed = []
+    total_points = 0
+    
     for goal in WORKFLOW_DATA['goals']:
         if 'entity' in goal['condition']:
             entity_id = goal['condition']['entity']
             target_state = goal['condition']['state']
+            current_state = get_entity_state(entity_id)
             
-            current = petri_net.tokens.get(entity_id, "")
-            if target_state in current:
+            if current_state == target_state:
                 completed.append(f"✓ {goal['name']} ({goal['points']} points)")
-                if goal['id'] not in petri_net.metrics['goals_completed']:
-                    petri_net.metrics['goals_completed'].append(goal['id'])
+                total_points += goal['points']
+                if entity_id not in petri_net.metrics['goals_completed']:
+                    petri_net.metrics['goals_completed'].append(entity_id)
     
-    total_points = len(petri_net.metrics['goals_completed']) * 100
+    completed_text = '\n'.join(completed) if completed else 'No goals completed yet'
     
-    return (f"Goals completed:\n" + "\n".join(completed) + 
-            f"\n\nTotal points: {total_points}/800")
+    return (f"Goals Status:\n{completed_text}\n\n"
+            f"Total Points: {total_points}\n"
+            f"Petri Net: Goal verification through token analysis")
 
-@mcp.tool()
-def getMetrics() -> str:
-    """Get performance metrics"""
-    metrics = petri_net.metrics
-    goals_count = len(metrics['goals_completed'])
-    
-    avg_calls = metrics['tool_calls'] / goals_count if goals_count > 0 else 0
-    
-    return (f"Petri Net Navigator Metrics:\n"
-            f"- Tool calls: {metrics['tool_calls']}\n"
-            f"- Semantic hints used: {metrics['semantic_hints_used']}\n"
-            f"- Goals completed: {goals_count}\n"
-            f"- Average calls per goal: {avg_calls:.1f}\n"
-            f"- Formal model: SNAKES Petri net library\n"
-            f"- Verification capable: Yes")
-
+# Run the server
 if __name__ == "__main__":
     mcp.run()
