@@ -38,11 +38,11 @@ Most AI agents are built around finite state machine (FSM) thinking: "I'm in Sta
 
 ## Real Examples of AI Agent Failures
 
-**Procurement Automation Failure**: A Fortune 500 manufacturing company deployed an AI agent to handle purchase orders. The agent worked perfectly for simple, sequential purchases but failed 73% of the time when orders required both regulatory compliance checks and multi-vendor coordination. The agent could handle either process individually but couldn't manage both simultaneously.
+**Procurement Automation Failure**: AI agents deployed for purchase order processing work well for simple, sequential purchases but consistently fail when orders require both regulatory compliance checks and multi-vendor coordination. The agent can handle either process individually but can't manage both simultaneously.
 
-**Customer Service Routing Breakdown**: A telecommunications provider's AI agent could successfully route customer inquiries through multiple departments, but it frequently lost track of the customer's original problem. By the time the customer reached the right department, the agent was responding based only on the most recent interaction, not the customer's actual need.
+**Customer Service Routing Breakdown**: Support automation agents can successfully route customer inquiries through multiple departments but frequently lose track of the customer's original problem. By the time the customer reaches the right department, the agent is responding based only on the most recent interaction, not the customer's actual need.
 
-**HR Onboarding Inconsistencies**: An HR automation agent at a consulting firm handled sequential onboarding tasks flawlessly—creating credentials, then setting up system access, then enrolling in training. But when these processes needed to happen concurrently (as they do in real onboarding), the agent produced incomplete or contradictory results.
+**HR Onboarding Inconsistencies**: HR automation agents handle sequential onboarding tasks well—creating credentials, then setting up system access, then enrolling in training. But when these processes need to happen concurrently (as they do in real onboarding), the agent produces incomplete or contradictory results.
 
 ## The Cost of This Mismatch
 

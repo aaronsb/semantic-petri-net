@@ -23,7 +23,7 @@ Analysis of AI agent deployments reveals consistent failure patterns that point 
 
 **What Happens**: AI agents get overwhelmed when workflows have too many possible combinations of states.
 
-**Real Example**: A procurement agent at a manufacturing company handled simple purchase orders perfectly but consistently failed when orders required both regulatory compliance and multi-vendor coordination. The agent could handle either process alone but couldn't track both simultaneously.
+**Real Example**: Procurement agents handle simple purchase orders well but consistently fail when orders require both regulatory compliance and multi-vendor coordination. The agent can handle either process alone but can't track both simultaneously.
 
 **Why It Happens**: The agent tries to create separate states for every possible combination—"compliance pending + vendor A selected," "compliance approved + vendor B under review," etc. With just a few parallel processes, the number of combinations becomes unmanageable.
 
@@ -31,7 +31,7 @@ Analysis of AI agent deployments reveals consistent failure patterns that point 
 
 **What Happens**: AI agents lose track of the original goal while navigating complex workflows.
 
-**Real Example**: A telecommunications customer service agent successfully routed inquiries through multiple departments but frequently provided responses addressing only the most recent interaction, not the customer's original problem.
+**Real Example**: Customer service agents can successfully route inquiries through multiple departments but frequently provide responses addressing only the most recent interaction, not the customer's original problem.
 
 **Why It Happens**: The agent focuses on its current step and forgets the broader context. It's like having someone who can follow directions perfectly but forgets where they were trying to go.
 
